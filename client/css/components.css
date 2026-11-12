@@ -129,3 +129,357 @@
 .dev-controls button:hover {
     background: var(--bg);
 }
+
+/* ---------- Action points (top bar) ---------- */
+
+.points {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    padding: 4px 12px;
+    border: 2px solid var(--border);
+    border-radius: 999px;
+    background: var(--surface);
+    cursor: help;
+}
+
+.points strong {
+    font-size: 1.2rem;
+}
+
+.points-unit {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.points-gain {
+    margin-left: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--success);
+}
+
+.points-gain.penalized {
+    color: var(--danger);
+}
+
+/* ---------- Task panels ---------- */
+
+.panel {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+}
+
+.panel-todo {
+    background: var(--panel-todo);
+}
+
+.panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 8px 10px 6px;
+}
+
+.panel-head h2 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.count {
+    display: inline-block;
+    min-width: 1.6em;
+    padding: 0 6px;
+    margin-left: 4px;
+    border-radius: 999px;
+    background: var(--border);
+    color: #fff;
+    font-size: 0.75rem;
+    text-align: center;
+    vertical-align: middle;
+}
+
+.add {
+    padding: 3px 10px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--surface);
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.add:hover {
+    background: var(--bg);
+}
+
+.task-list {
+    flex: 1;
+    min-height: 0;
+    margin: 0;
+    padding: 0 8px 8px;
+    list-style: none;
+    overflow-y: auto;
+}
+
+.task {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: start;
+    gap: 8px;
+    padding: 7px 8px;
+    margin-top: 6px;
+    background: var(--surface);
+    border: 1px solid #c3cad3;
+    border-left: 4px solid #c3cad3;
+    border-radius: 6px;
+}
+
+.task.overdue {
+    border-color: var(--danger);
+    border-left-color: var(--danger);
+    background: var(--danger-bg);
+}
+
+.task-check {
+    width: 18px;
+    height: 18px;
+    margin: 2px 0 0;
+    accent-color: var(--success);
+    cursor: pointer;
+}
+
+.task-body {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    text-align: left;
+    cursor: pointer;
+}
+
+.task-title {
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+
+.task.done .task-title {
+    text-decoration: line-through;
+    color: var(--text-muted);
+}
+
+.task-body:hover .task-title {
+    text-decoration: underline;
+}
+
+.task-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 8px;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+}
+
+.tag.late {
+    font-weight: 700;
+    color: var(--danger);
+}
+
+.task.daily {
+    grid-template-columns: auto 1fr auto auto;
+}
+
+.streak-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    padding: 1px 8px;
+    border-radius: 999px;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.streak-badge.kept {
+    background: #fbe7c6;
+    color: #8a4b08;
+}
+
+.streak-badge.at-risk {
+    background: var(--bg);
+    color: var(--text-muted);
+}
+
+.streak-badge.at-risk span,
+.streak-badge.none span {
+    filter: grayscale(1);
+    opacity: 0.6;
+}
+
+.streak-badge.none {
+    color: var(--text-muted);
+}
+
+.severity {
+    letter-spacing: 1px;
+    color: var(--text);
+}
+
+.task-delete {
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    border: 0;
+    border-radius: 4px;
+    background: none;
+    color: var(--text-muted);
+    font-size: 1.2rem;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.task-delete:hover {
+    background: var(--danger-bg);
+    color: var(--danger);
+}
+
+.task-empty {
+    padding: 10px 4px;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+/* ---------- Modal (add / edit task) ---------- */
+
+.modal {
+    width: min(440px, calc(100vw - 32px));
+    padding: 0;
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    color: var(--text);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
+}
+
+.modal::backdrop {
+    background: rgba(20, 25, 32, 0.45);
+}
+
+.modal form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 18px 20px;
+}
+
+.modal h2 {
+    margin: 0;
+    font-size: 1.2rem;
+}
+
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    font-size: 0.9rem;
+}
+
+.field > span,
+.field > label,
+.field legend {
+    font-weight: 600;
+}
+
+.shortcuts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.shortcuts button {
+    padding: 3px 10px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--surface);
+    font-size: 0.85rem;
+    cursor: pointer;
+}
+
+.shortcuts button:hover {
+    background: var(--bg);
+}
+
+
+.field input[type='text'],
+.field input[type='datetime-local'],
+.field select {
+    padding: 6px 8px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--surface);
+}
+
+.segmented {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.segmented legend {
+    margin-bottom: 4px;
+}
+
+.hint {
+    color: var(--text-muted);
+}
+
+.error {
+    color: var(--danger);
+    font-weight: 600;
+}
+
+.error:empty {
+    display: none;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 4px;
+}
+
+.modal-actions button {
+    padding: 6px 16px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.modal-actions .primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+    font-weight: 600;
+}
+
+.modal-actions .secondary {
+    background: var(--surface);
+}

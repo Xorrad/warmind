@@ -19,3 +19,28 @@ export async function renderVersion(el) {
         el.textContent = '';
     }
 }
+
+/**
+ * Show the action points balance and the estimated gain at the end of the
+ * day, with its breakdown in the tooltip.
+ * @param {HTMLElement} el
+ * @param {number} balance
+ * @param {import('/engine/points.js').PointsBreakdown} estimate
+ */
+export function renderPoints(el, balance, estimate) {
+    const penalized = estimate.overdue.length > 0;
+    el.querySelector('[data-points-balance]').textContent = String(balance);
+    const gain = el.querySelector('[data-points-gain]');
+    gain.textContent = `+${estimate.total} tomorrow`;
+    gain.classList.toggle('penalized', penalized);
+    const lines = [
+        `Balance: ${balance} AP`,
+        '',
+        'Estimated gain at the end of today:',
+        `  Faction size: +${estimate.base.toFixed(1)}`,
+        `  Unfinished tasks: −${estimate.penalty.toFixed(1)}`,
+        `  Completed today: +${estimate.bonus}`,
+    ];
+    if (penalized) lines.push(`  ${estimate.overdue.length} task(s) overdue by tonight: no points at all!`);
+    el.title = lines.join('\n');
+}

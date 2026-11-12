@@ -11,6 +11,10 @@
     --map-stroke: #2b3138;
     --map-bg: #cfd5dc;
     --radius: 8px;
+    --danger: #b8433b;
+    --danger-bg: #f8e3e1;
+    --success: #4f7f3f;
+    --panel-todo: #dceafb;
     --font: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 }
 
@@ -18,6 +22,11 @@
 *::before,
 *::after {
     box-sizing: border-box;
+}
+
+/* Components set their own display; never let that override [hidden] */
+[hidden] {
+    display: none !important;
 }
 
 html,
@@ -33,6 +42,8 @@ body {
 }
 
 button,
-input {
+input,
+select {
     font: inherit;
+    color: inherit;
 }

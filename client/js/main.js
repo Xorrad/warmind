@@ -1,14 +1,20 @@
 /**
  * @file Bootstrap: login check, load campaign, render.
  *
- * Current state: map generation prototype. The seed is read from the URL
- * (?seed=...) so a given map can be shared and reloaded.
+ * Current state: map prototype plus the todo list (saved in localStorage).
+ * The seed is read from the URL (?seed=...) so a given map can be shared
+ * and reloaded.
  */
 
 import { generateMap } from '/engine/mapgen.js';
 import { TERRAINS } from '/engine/config.js';
 import { createMapView } from './ui/map.js';
-import { renderVersion } from './ui/topbar.js';
+import { renderVersion, renderPoints } from './ui/topbar.js';
+import { renderTasks } from './ui/tasks.js';
+import { createTaskDialog } from './ui/modals.js';
+import { store } from './store.js';
+import { createTask, updateTask, toggleDone } from '/engine/tasks.js';
+import { settleDays, estimateToday } from '/engine/tick.js';
 
 const seedInput = /** @type {HTMLInputElement} */ (document.getElementById('seed'));
 const modeButton = document.getElementById('mode');
@@ -27,7 +33,76 @@ function load(seed) {
 
     map = generateMap({ seed });
     view.render(map);
+    settle();
+    renderAll();
 }
+
+/* ---------- Tasks ---------- */
+
+const panels = {
+    todo: document.getElementById('todo-list'),
+    streaks: document.getElementById('streak-list'),
+    completed: document.getElementById('completed-list'),
+};
+const pointsEl = document.getElementById('points');
+
+const newId = () => globalThis.crypto?.randomUUID?.() ?? `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+
+const setTasks = (fn) => store.update((s) => ({ ...s, tasks: fn(s.tasks) }));
+
+const taskDialog = createTaskDialog(document.getElementById('task-dialog'), (fields, id) => {
+    const now = new Date();
+    setTasks((tasks) => (id ? tasks.map((t) => (t.id === id ? updateTask(t, fields) : t)) : [...tasks, createTask(fields, { id: newId(), now })]));
+});
+
+const taskCallbacks = {
+    onToggle: (id) => setTasks((tasks) => tasks.map((t) => (t.id === id ? toggleDone(t, new Date()) : t))),
+    onEdit: (id) => taskDialog.open(store.get().tasks.find((t) => t.id === id)),
+    onDelete: (id) => {
+        const task = store.get().tasks.find((t) => t.id === id);
+        if (task && confirm(`Delete "${task.title}"?`)) setTasks((tasks) => tasks.filter((t) => t.id !== id));
+    },
+};
+
+function provincesOwned() {
+    const player = map.factions.find((f) => f.isPlayer);
+    return map.provinces.filter((p) => p.owner === player.id).length;
+}
+
+/** Credit the points of every day that ended since the last visit. */
+function settle() {
+    if (!map) return;
+    const { tasks, ledger } = store.get();
+    const result = settleDays(ledger, tasks, { provincesOwned: provincesOwned(), now: new Date() });
+    if (result.ledger.settledThrough !== ledger.settledThrough) store.update((s) => ({ ...s, ledger: result.ledger }));
+}
+
+function renderAll() {
+    const now = new Date();
+    const { tasks, ledger } = store.get();
+    renderTasks(panels, tasks, now, taskCallbacks);
+    if (map) renderPoints(pointsEl, ledger.balance, estimateToday(tasks, { provincesOwned: provincesOwned(), now }));
+}
+
+store.subscribe(renderAll);
+// Due dates, streaks and day changes depend on the clock: check every minute
+setInterval(() => {
+    settle();
+    renderAll();
+}, 60 * 1000);
+
+for (const button of document.querySelectorAll('[data-add]')) {
+    button.addEventListener('click', () => taskDialog.open(null, button.dataset.add));
+}
+
+// Mobile: the task panels replace the map instead of sitting beside it
+const app = document.getElementById('app');
+const viewToggle = document.getElementById('view-toggle');
+viewToggle.addEventListener('click', () => {
+    const open = app.classList.toggle('show-tasks');
+    viewToggle.setAttribute('aria-expanded', String(open));
+    viewToggle.textContent = open ? 'Map' : 'Tasks';
+});
 
 function showProvince(p) {
     if (!p) {

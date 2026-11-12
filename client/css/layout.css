@@ -33,3 +33,68 @@
     overflow: hidden;
     background: var(--map-bg);
 }
+
+/* ---------- Body: task side panel + map ---------- */
+
+.body {
+    display: grid;
+    grid-template-columns: minmax(260px, 320px) 1fr;
+    min-height: 0;
+}
+
+.sidebar {
+    display: grid;
+    grid-template-rows: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr);
+    gap: 10px;
+    padding: 10px;
+    min-height: 0;
+    background: var(--surface-alt);
+    border-right: 2px solid var(--border);
+}
+
+.view-toggle {
+    display: none;
+}
+
+/* Mobile: the map takes the whole screen; a button swaps in the task view */
+@media (max-width: 720px) {
+    .topbar {
+        gap: 10px;
+        padding: 8px 12px;
+    }
+
+    .body {
+        grid-template-columns: 1fr;
+    }
+
+    .sidebar {
+        display: none;
+        border-right: 0;
+    }
+
+    .app.show-tasks .sidebar {
+        display: grid;
+        grid-template-rows: auto auto auto;
+        overflow-y: auto;
+        padding-bottom: 72px;
+    }
+
+    .app.show-tasks .map-area {
+        display: none;
+    }
+
+    .view-toggle {
+        display: block;
+        position: fixed;
+        left: 16px;
+        bottom: 16px;
+        z-index: 10;
+        padding: 10px 18px;
+        border: 2px solid var(--border);
+        border-radius: 999px;
+        background: var(--surface);
+        font-weight: 700;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        cursor: pointer;
+    }
+}
