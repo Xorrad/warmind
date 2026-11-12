@@ -12,11 +12,16 @@ export const MAP = {
     provinceCount: 200,
     factionCount: 5,
     /** Lloyd relaxation passes: more = more regular province sizes. */
-    relaxIterations: 2,
+    relaxIterations: 1,
     /** Border wobble, as a fraction of the edge length. */
-    borderJitter: 0.5,
-    /** Midpoint-displacement subdivisions per border edge. */
-    borderDepth: 3,
+    borderJitter: 0.35,
+    /** Midpoint-displacement subdivisions per border edge (2^depth segments). */
+    borderDepth: 5,
+    /**
+     * Share of the wobble kept at each finer subdivision (0..1). Low = a few
+     * smooth bulges; high = rough, detailed borders.
+     */
+    borderRoughness: 0.6,
     /** Fraction of provinces per terrain (the rest is plains, capitals become cities). */
     terrainShare: { mountains: 0.1, hills: 0.2, forest: 0.25 },
     /**

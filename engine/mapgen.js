@@ -250,7 +250,9 @@ function noisyEdge(a, b, s1, s2, rng, o) {
     const dx = b[0] - a[0];
     const dy = b[1] - a[1];
     const len = Math.hypot(dx, dy);
-    if (len === 0 || o.borderDepth <= 0) return [];
+    // Short edges get fewer subdivisions: segments stay at least ~4px long
+    const depth = Math.min(o.borderDepth, Math.floor(Math.log2(len / 4)));
+    if (len === 0 || depth <= 0) return [];
     const local = ([x, y]) => [((x - a[0]) * dx + (y - a[1]) * dy) / len ** 2, ((x - a[0]) * -dy + (y - a[1]) * dx) / len ** 2];
     const [above, below] = [local(s1), local(s2)].sort((p, q) => q[1] - p[1]);
     if (above[1] <= 0 || below[1] >= 0) return []; // degenerate: sites not on both sides
@@ -263,15 +265,15 @@ function noisyEdge(a, b, s1, s2, rng, o) {
         return 0.9 * h * Math.min(left, right);
     };
 
-    const n = 2 ** o.borderDepth;
+    const n = 2 ** depth;
     const heights = new Array(n + 1).fill(0);
     let amp = o.borderJitter;
     for (let step = n; step > 1; step /= 2) {
         for (let l = 0; l < n; l += step) {
             const r = l + step;
-            heights[l + step / 2] = (heights[l] + heights[r]) / 2 + (rng.next() - 0.5) * 2 * amp * (step / n);
+            heights[l + step / 2] = (heights[l] + heights[r]) / 2 + (rng.next() - 0.5) * 2 * amp;
         }
-        amp *= 0.6;
+        amp *= o.borderRoughness;
     }
 
     const out = [];
@@ -279,7 +281,9 @@ function noisyEdge(a, b, s1, s2, rng, o) {
         const u = i / n;
         const raw = heights[i];
         const limit = raw >= 0 ? envelope(above, u) : envelope(below, u);
-        const v = limit > 0 ? limit * Math.tanh(raw / limit) : 0;
+        // Where the room left is under a pixel (next to a vertex), stay on
+        // the straight edge: rounding the coordinates could cross a neighbour
+        const v = limit * len >= 1 ? limit * Math.tanh(raw / limit) : 0;
         out.push([a[0] + dx * u - dy * v, a[1] + dy * u + dx * v]);
     }
     return out;
