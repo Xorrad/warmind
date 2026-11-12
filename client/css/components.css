@@ -329,6 +329,34 @@
     font-weight: 700;
 }
 
+.user-menu {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9rem;
+}
+
+.user-name {
+    font-weight: 700;
+}
+
+.user-name::before {
+    content: '⚑ ';
+    color: var(--text-muted);
+}
+
+.logout {
+    padding: 3px 10px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--surface);
+    cursor: pointer;
+}
+
+.logout:hover {
+    background: var(--bg);
+}
+
 .session-date {
     font-variant-numeric: tabular-nums;
 }

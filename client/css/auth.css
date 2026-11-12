@@ -1,0 +1,143 @@
+/* auth.css: login / registration page */
+
+.auth-page {
+    display: grid;
+    place-items: center;
+    min-height: 100vh;
+    padding: 16px;
+    background:
+        radial-gradient(circle at 20% 20%, rgba(59, 111, 182, 0.18), transparent 50%),
+        radial-gradient(circle at 80% 80%, rgba(184, 67, 59, 0.15), transparent 50%),
+        var(--bg);
+}
+
+.auth-card {
+    width: min(400px, 100%);
+    padding: 28px 28px 24px;
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
+}
+
+.auth-brand {
+    margin: 0;
+    font-size: 2rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-align: center;
+}
+
+.auth-tagline {
+    margin: 4px 0 20px;
+    color: var(--text-muted);
+    text-align: center;
+}
+
+.auth-tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    margin-bottom: 18px;
+    border-bottom: 2px solid #d5d9de;
+}
+
+.auth-tabs button {
+    padding: 8px;
+    margin-bottom: -2px;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    background: none;
+    font-weight: 700;
+    color: var(--text-muted);
+    cursor: pointer;
+}
+
+.auth-tabs button[aria-selected='true'] {
+    border-bottom-color: var(--accent);
+    color: var(--text);
+}
+
+.auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.auth-form .field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 0.9rem;
+}
+
+.auth-form .field > span {
+    font-weight: 600;
+}
+
+.auth-form input {
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--surface);
+}
+
+.auth-form input:focus-visible,
+.auth-tabs button:focus-visible,
+.auth-form button:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+}
+
+.auth-form .hint {
+    color: var(--text-muted);
+}
+
+.auth-form button.primary {
+    margin-top: 4px;
+    padding: 9px 16px;
+    border: 1px solid var(--accent);
+    border-radius: 4px;
+    background: var(--accent);
+    color: #fff;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.auth-form button.primary:disabled {
+    opacity: 0.6;
+    cursor: progress;
+}
+
+.auth-error {
+    margin: 0;
+    color: var(--danger);
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.auth-error:empty {
+    display: none;
+}
+
+.auth-verify {
+    margin: 0;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.auth-verify.done {
+    color: var(--success);
+}
+
+.auth-verify.failed {
+    color: var(--danger);
+}
+
+/* Honeypot: off-screen for people, still in the form for bots */
+.hp {
+    position: absolute;
+    left: -10000px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+}
