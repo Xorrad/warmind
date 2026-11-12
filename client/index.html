@@ -19,10 +19,11 @@
         <small class="brand-version" id="version"></small>
       </div>
       <span class="topbar-divider" aria-hidden="true"></span>
-      <div class="points" id="points" tabindex="0">
+      <div class="points" id="points" tabindex="0" aria-describedby="points-details">
         <strong data-points-balance>–</strong>
         <span class="points-unit">AP</span>
         <small class="points-gain" data-points-gain></small>
+        <div class="points-popover" id="points-details" role="tooltip"></div>
       </div>
       <!-- Map prototype controls (temporary, will move to settings) -->
       <div class="session-badge" id="session-badge" hidden>

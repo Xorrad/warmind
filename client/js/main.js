@@ -9,11 +9,11 @@
 import { generateMap } from '/engine/mapgen.js';
 import { TERRAINS } from '/engine/config.js';
 import { createMapView } from './ui/map.js';
-import { renderVersion, renderPoints } from './ui/topbar.js';
+import { renderVersion, renderPoints, setupPointsPopover } from './ui/topbar.js';
 import { renderTasks, setupPanelToggles } from './ui/tasks.js';
 import { createTaskDialog } from './ui/modals.js';
 import { store, session } from './store.js';
-import { createTask, updateTask, toggleDone } from '/engine/tasks.js';
+import { createTask, updateTask, toggleDone, isDoneToday } from '/engine/tasks.js';
 import { settleDays, estimateToday, completionGains } from '/engine/tick.js';
 
 const seedInput = /** @type {HTMLInputElement} */ (document.getElementById('seed'));
@@ -45,6 +45,7 @@ const panels = {
     completed: document.getElementById('completed-list'),
 };
 const pointsEl = document.getElementById('points');
+setupPointsPopover(pointsEl);
 
 const newId = () => globalThis.crypto?.randomUUID?.() ?? `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
 
@@ -83,7 +84,11 @@ function renderAll() {
     if (!map) return;
     const context = { provincesOwned: provincesOwned(), now };
     renderTasks(panels, tasks, now, completionGains(tasks, context), taskCallbacks);
-    renderPoints(pointsEl, ledger.balance, estimateToday(tasks, context));
+    renderPoints(pointsEl, ledger.balance, estimateToday(tasks, context), {
+        tasks,
+        provincesOwned: context.provincesOwned,
+        completedToday: tasks.filter((t) => isDoneToday(t, now)).length,
+    });
 }
 
 store.subscribe(renderAll);
