@@ -6,7 +6,9 @@
  *  2. build the Voronoi diagram: one cell = one province, shared edge = neighbours;
  *  3. make borders jagged (deterministic per edge, so both sides match);
  *  4. assign terrain from smooth pseudo-noise;
- *  5. place faction capitals far apart and grow territories round-robin.
+ *  5. carve impassable mountain ranges along chains of borders;
+ *  6. place faction capitals far apart and grow territories round-robin;
+ *  7. append the ranges as extra (unowned, impassable) provinces.
  */
 
 import { Delaunay } from 'd3-delaunay';
@@ -20,9 +22,12 @@ import { MAP, FACTIONS, NAME_PARTS } from './config.js';
  * @property {number} id
  * @property {string} name
  * @property {string} terrain Key of TERRAINS.
- * @property {number} owner Faction id.
+ * @property {number} owner Faction id, -1 for impassable provinces.
  * @property {boolean} isCapital
- * @property {number[]} neighbours Ids of adjacent provinces.
+ * @property {number[]} neighbours Ids of provinces reachable in one move
+ *   (always empty for impassable provinces).
+ * @property {number[]} [borders] Impassable provinces only: ids of the
+ *   provinces they touch.
  * @property {Point} center Centroid, used for labels and units.
  * @property {Point[]} polygon Outline (not closed: last point != first).
  *
@@ -70,8 +75,10 @@ export function generateMap(options = {}) {
     // 2. Voronoi cells and adjacency
     const voronoi = new Delaunay(points).voronoi(bounds);
     const provinces = [];
+    const cells = [];
     for (let i = 0; i < o.provinceCount; i++) {
         const raw = openRing(voronoi.cellPolygon(i));
+        cells.push(raw);
         provinces.push({
             id: i,
             name: '',
@@ -100,7 +107,10 @@ export function generateMap(options = {}) {
     const lowlands = byElevation.slice(nMountains + nHills).sort((a, b) => moisture(...b.center) - moisture(...a.center));
     lowlands.slice(0, Math.round(n * o.terrainShare.forest)).forEach((p) => (p.terrain = 'forest'));
 
-    // 5. Factions
+    // 5. Mountain ranges (before factions, so territories grow around them)
+    const ranges = carveRanges(rng, provinces, cells, elevation, o);
+
+    // 6. Factions
     const factionCount = Math.min(o.factionCount, FACTIONS.length, o.provinceCount);
     const capitals = farthestPoints(rng, provinces, factionCount, o.width, o.height);
     const factions = capitals.map((capital, id) => ({
@@ -114,6 +124,21 @@ export function generateMap(options = {}) {
     for (const c of capitals) {
         provinces[c].isCapital = true;
         provinces[c].terrain = 'city';
+    }
+
+    // 7. Ranges become provinces of their own, after the regular ones
+    for (const r of ranges) {
+        provinces.push({
+            id: provinces.length,
+            name: `${uniqueName(rng, used)} Range`,
+            terrain: 'range',
+            owner: -1,
+            isCapital: false,
+            neighbours: [],
+            borders: r.borders,
+            center: roundPoint(r.spine[Math.floor(r.spine.length / 2)]),
+            polygon: roundPolygon(ribbon(rng, smooth(r.spine, 2), o.ranges.width)),
+        });
     }
 
     return { seed, width: o.width, height: o.height, provinces, factions };
@@ -209,6 +234,173 @@ function jaggedEdge(a, b, o) {
 }
 
 const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
+
+/* ------------------------------------------------------------------ */
+/* Mountain ranges                                                     */
+/* ------------------------------------------------------------------ */
+
+const vertexKey = (p) => `${p[0].toFixed(2)},${p[1].toFixed(2)}`;
+
+/**
+ * Lay impassable ranges along winding chains of Voronoi edges. Each edge of
+ * a chain separates two provinces, whose adjacency is removed. A chain is
+ * rejected if it would split the map in two, so every province stays
+ * reachable. Ranges never touch each other or the map edge.
+ * @returns {{ spine: Point[], borders: number[] }[]}
+ */
+function carveRanges(rng, provinces, cells, elevation, o) {
+    const { count, minEdges, maxEdges } = o.ranges;
+    if (!count) return [];
+    const margin = 0.04 * Math.min(o.width, o.height);
+    const inside = ([x, y]) => x > margin && y > margin && x < o.width - margin && y < o.height - margin;
+
+    // Graph of Voronoi vertices linked by the interior edges they share
+    const edges = new Map();
+    cells.forEach((poly, id) => {
+        for (let i = 0; i < poly.length; i++) {
+            const a = poly[i];
+            const b = poly[(i + 1) % poly.length];
+            const [ka, kb] = [vertexKey(a), vertexKey(b)];
+            const k = ka < kb ? `${ka}|${kb}` : `${kb}|${ka}`;
+            if (!edges.has(k)) edges.set(k, { a, b, ka, kb, cells: [] });
+            edges.get(k).cells.push(id);
+        }
+    });
+    const vertices = new Map();
+    for (const e of edges.values()) {
+        if (e.cells.length !== 2 || !inside(e.a) || !inside(e.b)) continue;
+        for (const [from, fk, to, tk] of [[e.a, e.ka, e.b, e.kb], [e.b, e.kb, e.a, e.ka]]) {
+            if (!vertices.has(fk)) vertices.set(fk, { point: from, links: [] });
+            vertices.get(fk).links.push({ to: tk, point: to, cells: e.cells });
+        }
+    }
+
+    // Ranges start on high ground, so they line up with the mountain terrain
+    const starts = [...vertices.keys()]
+        .sort((a, b) => elevation(...vertices.get(b).point) - elevation(...vertices.get(a).point))
+        .slice(0, Math.ceil(vertices.size / 3));
+
+    const blocked = new Set();
+    const ranges = [];
+    for (let attempt = 0; ranges.length < count && attempt < count * 30; attempt++) {
+        const start = rng.pick(starts);
+        if (blocked.has(start)) continue;
+
+        // Random walk with momentum: the heading drifts a little at each
+        // step, which gives the snake-like shape
+        const target = rng.int(minEdges, maxEdges);
+        let heading = rng.range(0, Math.PI * 2);
+        const path = [start];
+        const steps = [];
+        while (steps.length < target) {
+            const here = vertices.get(path.at(-1));
+            let best = null;
+            let bestScore = -Infinity;
+            for (const link of here.links) {
+                if (path.includes(link.to) || blocked.has(link.to)) continue;
+                const dir = Math.atan2(link.point[1] - here.point[1], link.point[0] - here.point[0]);
+                const align = Math.cos(dir - heading);
+                if (align < 0) continue; // no sharp turn back
+                const score = align + rng.range(0, 0.6);
+                if (score > bestScore) {
+                    bestScore = score;
+                    best = { link, dir };
+                }
+            }
+            if (!best) break;
+            path.push(best.link.to);
+            steps.push(best.link);
+            heading = best.dir + rng.range(-0.6, 0.6);
+        }
+        if (steps.length < minEdges) continue;
+
+        // Cut adjacency along the chain, undo if the map is no longer connected
+        for (const { cells: [a, b] } of steps) unlink(provinces, a, b);
+        if (!isConnected(provinces)) {
+            for (const { cells: [a, b] } of steps) link(provinces, a, b);
+            continue;
+        }
+
+        for (const k of path) {
+            blocked.add(k);
+            for (const l of vertices.get(k).links) blocked.add(l.to);
+        }
+        const spine = [vertices.get(start).point];
+        let prev = spine[0];
+        for (const step of steps) {
+            spine.push(...jaggedEdge(prev, step.point, o), step.point);
+            prev = step.point;
+        }
+        const borders = [...new Set(steps.flatMap((s) => s.cells))].sort((x, y) => x - y);
+        ranges.push({ spine, borders });
+    }
+    return ranges;
+}
+
+function unlink(provinces, a, b) {
+    provinces[a].neighbours = provinces[a].neighbours.filter((n) => n !== b);
+    provinces[b].neighbours = provinces[b].neighbours.filter((n) => n !== a);
+}
+
+function link(provinces, a, b) {
+    provinces[a].neighbours.push(b);
+    provinces[b].neighbours.push(a);
+}
+
+function isConnected(provinces) {
+    const seen = new Set([0]);
+    const queue = [0];
+    while (queue.length) {
+        for (const n of provinces[queue.shift()].neighbours) {
+            if (!seen.has(n)) {
+                seen.add(n);
+                queue.push(n);
+            }
+        }
+    }
+    return seen.size === provinces.length;
+}
+
+/** Chaikin corner cutting; keeps both endpoints. */
+function smooth(line, passes) {
+    for (let k = 0; k < passes; k++) {
+        const out = [line[0]];
+        for (let i = 0; i < line.length - 1; i++) {
+            const [x0, y0] = line[i];
+            const [x1, y1] = line[i + 1];
+            out.push([0.75 * x0 + 0.25 * x1, 0.75 * y0 + 0.25 * y1], [0.25 * x0 + 0.75 * x1, 0.25 * y0 + 0.75 * y1]);
+        }
+        out.push(line.at(-1));
+        line = out;
+    }
+    return line;
+}
+
+/**
+ * Thicken a line into a closed outline that tapers to a point at both ends
+ * and swells and narrows along the way.
+ * @param {Point[]} line
+ * @returns {Point[]}
+ */
+function ribbon(rng, line, width) {
+    const phase = rng.range(0, Math.PI * 2);
+    const freq = rng.range(2, 4) * Math.PI;
+    const left = [];
+    const right = [];
+    const last = line.length - 1;
+    line.forEach(([x, y], i) => {
+        const [px, py] = line[Math.max(i - 1, 0)];
+        const [nx, ny] = line[Math.min(i + 1, last)];
+        const len = Math.hypot(nx - px, ny - py) || 1;
+        const t = i / last;
+        const half = (width / 2) * Math.sin(Math.PI * t) ** 0.6 * (1 + 0.25 * Math.sin(freq * t + phase));
+        const ox = (-(ny - py) / len) * half;
+        const oy = ((nx - px) / len) * half;
+        left.push([x + ox, y + oy]);
+        right.push([x - ox, y - oy]);
+    });
+    return [...left, ...right.slice(1, -1).reverse()];
+}
 
 /* ------------------------------------------------------------------ */
 /* Terrain, names, factions                                            */

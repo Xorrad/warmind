@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { generateMap } from '../engine/mapgen.js';
 import { createRng } from '../engine/rng.js';
-import { TERRAINS } from '../engine/config.js';
+import { TERRAINS, MAP } from '../engine/config.js';
+import { isPassable, canMove } from '../engine/actions.js';
 
 describe('rng', () => {
     it('is deterministic for a given seed', () => {
@@ -33,15 +34,17 @@ describe('generateMap', () => {
 
     it.each(seeds)('has symmetric adjacency (seed %s)', (seed) => {
         const { provinces } = generateMap({ seed });
-        for (const p of provinces) {
+        for (const p of provinces.filter((q) => TERRAINS[q.terrain].passable)) {
             expect(p.neighbours.length).toBeGreaterThan(0);
             for (const n of p.neighbours) expect(provinces[n].neighbours).toContain(p.id);
         }
     });
 
-    it.each(seeds)('gives every province an owner and a valid terrain (seed %s)', (seed) => {
+    it.each(seeds)('gives every passable province an owner and a valid terrain (seed %s)', (seed) => {
         const { provinces, factions } = generateMap({ seed });
         for (const p of provinces) {
+            expect(TERRAINS).toHaveProperty(p.terrain);
+            if (!TERRAINS[p.terrain].passable) continue;
             expect(p.owner).toBeGreaterThanOrEqual(0);
             expect(p.owner).toBeLessThan(factions.length);
             expect(TERRAINS).toHaveProperty(p.terrain);
@@ -77,5 +80,74 @@ describe('generateMap', () => {
     it('gives provinces unique names', () => {
         const { provinces } = generateMap({ seed: 'demo' });
         expect(new Set(provinces.map((p) => p.name)).size).toBe(provinces.length);
+    });
+});
+
+describe('mountain ranges', () => {
+    const seeds = ['demo', 'alpha', 'warmind', 42];
+    const isRange = (p) => !TERRAINS[p.terrain].passable;
+
+    it.each(seeds)('generates the configured number of impassable, unowned ranges (seed %s)', (seed) => {
+        const { provinces } = generateMap({ seed });
+        const ranges = provinces.filter(isRange);
+        expect(ranges).toHaveLength(MAP.ranges.count);
+        for (const r of ranges) {
+            expect(r.owner).toBe(-1);
+            expect(r.isCapital).toBe(false);
+            expect(r.neighbours).toEqual([]);
+            expect(r.borders.length).toBeGreaterThanOrEqual(2);
+            for (const b of r.borders) expect(isRange(provinces[b])).toBe(false);
+        }
+    });
+
+    it.each(seeds)('are never a neighbour of any province (seed %s)', (seed) => {
+        const { provinces } = generateMap({ seed });
+        for (const p of provinces) for (const n of p.neighbours) expect(isRange(provinces[n])).toBe(false);
+    });
+
+    it.each(seeds)('keep every passable province reachable (seed %s)', (seed) => {
+        const { provinces } = generateMap({ seed });
+        const passable = provinces.filter((p) => !isRange(p));
+        const seen = new Set([passable[0].id]);
+        const queue = [passable[0].id];
+        while (queue.length) {
+            for (const n of provinces[queue.shift()].neighbours) {
+                if (!seen.has(n)) {
+                    seen.add(n);
+                    queue.push(n);
+                }
+            }
+        }
+        expect(seen.size).toBe(passable.length);
+    });
+
+    it('cut adjacency between the provinces they separate', () => {
+        const flat = generateMap({ seed: 'demo', ranges: { ...MAP.ranges, count: 0 } });
+        const carved = generateMap({ seed: 'demo' });
+        const edges = (m) => m.provinces.reduce((s, p) => s + p.neighbours.length, 0);
+        expect(edges(carved)).toBeLessThan(edges(flat));
+    });
+
+    it('can be disabled', () => {
+        const { provinces } = generateMap({ seed: 'demo', ranges: { ...MAP.ranges, count: 0 } });
+        expect(provinces.filter(isRange)).toHaveLength(0);
+    });
+});
+
+describe('movement rules', () => {
+    const map = generateMap({ seed: 'demo' });
+    const range = map.provinces.find((p) => p.terrain === 'range');
+    const land = map.provinces.find((p) => p.terrain !== 'range');
+
+    it('forbids entering or stationing in a mountain range', () => {
+        expect(isPassable(range)).toBe(false);
+        expect(isPassable(land)).toBe(true);
+        for (const b of range.borders) expect(canMove(map, b, range.id)).toBe(false);
+    });
+
+    it('allows moving between neighbours only', () => {
+        expect(canMove(map, land.id, land.neighbours[0])).toBe(true);
+        const far = map.provinces.find((p) => p.id !== land.id && isPassable(p) && !land.neighbours.includes(p.id));
+        expect(canMove(map, land.id, far.id)).toBe(false);
     });
 });

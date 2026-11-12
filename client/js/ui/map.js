@@ -37,7 +37,9 @@ export function createMapView(container, { onSelect } = {}) {
     });
 
     function fillFor(province) {
-        return mode === 'terrain' ? TERRAINS[province.terrain].color : map.factions[province.owner].color;
+        const terrain = TERRAINS[province.terrain];
+        // Impassable provinces have no owner: always show their terrain
+        return mode === 'terrain' || !terrain.passable ? terrain.color : map.factions[province.owner].color;
     }
 
     /** Draw (or redraw) the whole map. */
@@ -48,11 +50,14 @@ export function createMapView(container, { onSelect } = {}) {
         svg.setAttribute('viewBox', `0 0 ${map.width} ${map.height}`);
 
         const provinceLayer = el('g', { class: 'provinces' });
+        // Ranges lie on top of the borders they follow
+        const rangeLayer = el('g', { class: 'ranges' });
         const markerLayer = el('g', { class: 'markers' });
 
         for (const p of map.provinces) {
+            const passable = TERRAINS[p.terrain].passable;
             const path = el('path', {
-                class: 'province',
+                class: passable ? 'province' : 'province impassable',
                 d: `M${p.polygon.map((pt) => pt.join(',')).join('L')}Z`,
                 'data-id': p.id,
                 fill: fillFor(p),
@@ -61,7 +66,7 @@ export function createMapView(container, { onSelect } = {}) {
             title.textContent = `${p.name} (${TERRAINS[p.terrain].label})`;
             path.append(title);
             paths.set(p.id, path);
-            provinceLayer.append(path);
+            (passable ? provinceLayer : rangeLayer).append(path);
 
             if (p.isCapital) {
                 markerLayer.append(el('circle', { class: 'capital-marker', cx: p.center[0], cy: p.center[1], r: 9 }));
@@ -70,7 +75,7 @@ export function createMapView(container, { onSelect } = {}) {
                 markerLayer.append(label);
             }
         }
-        svg.replaceChildren(provinceLayer, markerLayer);
+        svg.replaceChildren(provinceLayer, rangeLayer, markerLayer);
         onSelect?.(null);
     }
 

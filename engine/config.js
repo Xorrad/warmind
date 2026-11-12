@@ -9,28 +9,36 @@
 export const MAP = {
     width: 1600,
     height: 1000,
-    provinceCount: 70,
+    provinceCount: 200,
     factionCount: 5,
     /** Lloyd relaxation passes: more = more regular province sizes. */
     relaxIterations: 2,
     /** Border wobble, as a fraction of the edge length. */
-    borderJitter: 0.2,
+    borderJitter: 0.5,
     /** Midpoint-displacement subdivisions per border edge. */
     borderDepth: 3,
     /** Fraction of provinces per terrain (the rest is plains, capitals become cities). */
     terrainShare: { mountains: 0.1, hills: 0.2, forest: 0.25 },
+    /**
+     * Impassable mountain ranges: thin winding provinces laid along province
+     * borders. They cut adjacency between the provinces on either side.
+     * Length is counted in Voronoi edges; width is in map pixels.
+     */
+    ranges: { count: 3, minEdges: 4, maxEdges: 8, width: 22 },
 };
 
 /**
  * Terrain types. attack/defense multiply combat power, moveCost is the
- * number of action points needed to enter the province.
+ * number of action points needed to enter the province. Impassable terrain
+ * (passable: false) can never be entered or garrisoned.
  */
 export const TERRAINS = {
-    plains: { label: 'Plains', color: '#d8d0a0', attack: 1.0, defense: 1.0, moveCost: 1 },
-    forest: { label: 'Forest', color: '#8fae7e', attack: 0.8, defense: 1.2, moveCost: 1 },
-    hills: { label: 'Hills', color: '#c2a57b', attack: 0.9, defense: 1.25, moveCost: 1 },
-    mountains: { label: 'Mountains', color: '#9b918a', attack: 0.6, defense: 1.5, moveCost: 2 },
-    city: { label: 'City', color: '#c8c0c8', attack: 1.0, defense: 1.3, moveCost: 1 },
+    plains: { label: 'Plains', color: '#d8d0a0', attack: 1.0, defense: 1.0, moveCost: 1, passable: true },
+    forest: { label: 'Forest', color: '#8fae7e', attack: 0.8, defense: 1.2, moveCost: 1, passable: true },
+    hills: { label: 'Hills', color: '#c2a57b', attack: 0.9, defense: 1.25, moveCost: 1, passable: true },
+    mountains: { label: 'Mountains', color: '#9b918a', attack: 0.6, defense: 1.5, moveCost: 2, passable: true },
+    city: { label: 'City', color: '#c8c0c8', attack: 1.0, defense: 1.3, moveCost: 1, passable: true },
+    range: { label: 'Mountain range', color: '#5e5650', passable: false },
 };
 
 /** Faction identities. Index 0 is always the player. */

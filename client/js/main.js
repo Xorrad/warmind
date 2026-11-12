@@ -34,8 +34,19 @@ function showProvince(p) {
         info.hidden = true;
         return;
     }
+    const names = (ids) => ids.map((n) => map.provinces[n].name).join(', ');
+    if (p.owner === -1) {
+        info.innerHTML = `
+        <h2>${p.name}</h2>
+        <dl>
+            <dt>Terrain</dt><dd><span class="swatch" style="background:${TERRAINS[p.terrain].color}"></span>${TERRAINS[p.terrain].label} (impassable)</dd>
+            <dt>Borders</dt><dd>${names(p.borders)}</dd>
+        </dl>`;
+        info.hidden = false;
+        return;
+    }
     const owner = map.factions[p.owner];
-    const neighbourNames = p.neighbours.map((n) => map.provinces[n].name).join(', ');
+    const neighbourNames = names(p.neighbours);
     info.innerHTML = `
         <h2>${p.name}${p.isCapital ? ' ★' : ''}</h2>
         <dl>

@@ -25,6 +25,15 @@
     filter: brightness(1.25) saturate(0.8);
 }
 
+.province.impassable {
+    stroke: #3a332e;
+    stroke-width: 1.5;
+}
+
+.province.impassable:hover {
+    filter: brightness(1.3);
+}
+
 .province.selected {
     stroke: #fff;
     stroke-width: 4;
