@@ -85,7 +85,8 @@ describe('generateMap', () => {
 
 describe('mountain ranges', () => {
     const seeds = ['demo', 'alpha', 'warmind', 42];
-    const isRange = (p) => !TERRAINS[p.terrain].passable;
+    const isRange = (p) => p.terrain === 'range';
+    const isImpassable = (p) => !TERRAINS[p.terrain].passable;
 
     it.each(seeds)('generates the configured number of impassable, unowned ranges (seed %s)', (seed) => {
         const { provinces } = generateMap({ seed });
@@ -96,18 +97,18 @@ describe('mountain ranges', () => {
             expect(r.isCapital).toBe(false);
             expect(r.neighbours).toEqual([]);
             expect(r.borders.length).toBeGreaterThanOrEqual(2);
-            for (const b of r.borders) expect(isRange(provinces[b])).toBe(false);
+            for (const b of r.borders) expect(isImpassable(provinces[b])).toBe(false);
         }
     });
 
     it.each(seeds)('are never a neighbour of any province (seed %s)', (seed) => {
         const { provinces } = generateMap({ seed });
-        for (const p of provinces) for (const n of p.neighbours) expect(isRange(provinces[n])).toBe(false);
+        for (const p of provinces) for (const n of p.neighbours) expect(isImpassable(provinces[n])).toBe(false);
     });
 
     it.each(seeds)('keep every passable province reachable (seed %s)', (seed) => {
         const { provinces } = generateMap({ seed });
-        const passable = provinces.filter((p) => !isRange(p));
+        const passable = provinces.filter((p) => !isImpassable(p));
         const seen = new Set([passable[0].id]);
         const queue = [passable[0].id];
         while (queue.length) {
@@ -177,7 +178,7 @@ describe('borders', () => {
     it.each([0.5, 1, 2])('never cross each other, even with borderJitter %s', (borderJitter) => {
         const { provinces } = generateMap({ seed: 'demo', provinceCount: 80, borderJitter });
         const segments = new Map();
-        for (const p of provinces.filter((q) => TERRAINS[q.terrain].passable)) {
+        for (const p of provinces.filter((q) => q.terrain !== 'range')) {
             p.polygon.forEach((a, i) => {
                 const b = p.polygon[(i + 1) % p.polygon.length];
                 segments.set([String(a), String(b)].sort().join('|'), [a, b]);
@@ -189,5 +190,46 @@ describe('borders', () => {
             for (let k = i + 1; k < list.length; k++) if (crosses(...list[i], ...list[k])) crossings++;
         }
         expect(crossings).toBe(0);
+    });
+});
+
+describe('seas', () => {
+    const seeds = ['demo', 'alpha', 'warmind', 42];
+    const isSea = (p) => p.terrain === 'sea';
+    const shoelace = (poly) => Math.abs(poly.reduce((s, [x0, y0], i) => {
+        const [x1, y1] = poly[(i + 1) % poly.length];
+        return s + x0 * y1 - x1 * y0;
+    }, 0)) / 2;
+
+    it.each(seeds)('are impassable, unowned and only border land (seed %s)', (seed) => {
+        const { provinces } = generateMap({ seed });
+        const seas = provinces.filter(isSea);
+        expect(seas.length).toBeGreaterThan(0);
+        for (const s of seas) {
+            expect(TERRAINS.sea.passable).toBe(false);
+            expect(s.owner).toBe(-1);
+            expect(s.neighbours).toEqual([]);
+            expect(s.borders.length).toBeGreaterThan(0);
+            for (const b of s.borders) expect(TERRAINS[provinces[b].terrain].passable).toBe(true);
+        }
+    });
+
+    it.each(seeds)('are larger than land provinces on average (seed %s)', (seed) => {
+        const { provinces } = generateMap({ seed });
+        const mean = (list) => list.reduce((s, p) => s + shoelace(p.polygon), 0) / list.length;
+        const land = provinces.filter((p) => p.owner >= 0);
+        expect(mean(provinces.filter(isSea))).toBeGreaterThan(1.5 * mean(land));
+    });
+
+    it.each(seeds)('come before ranges and after land in the numbering (seed %s)', (seed) => {
+        const { provinces } = generateMap({ seed });
+        const order = provinces.map((p) => (p.owner >= 0 ? 0 : isSea(p) ? 1 : 2));
+        expect(order).toEqual([...order].sort());
+        provinces.forEach((p, i) => expect(p.id).toBe(i));
+    });
+
+    it('can be disabled', () => {
+        const { provinces } = generateMap({ seed: 'demo', seas: { ...MAP.seas, share: 0 } });
+        expect(provinces.filter(isSea)).toHaveLength(0);
     });
 });

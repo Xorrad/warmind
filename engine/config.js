@@ -30,6 +30,11 @@ export const MAP = {
      * Length is counted in Voronoi edges; width is in map pixels.
      */
     ranges: { count: 3, minEdges: 4, maxEdges: 8, width: 22 },
+    /**
+     * Impassable seas: share of the cells flooded (low ground near the map
+     * edges first), merged into sea provinces of minCells to maxCells cells.
+     */
+    seas: { share: 0.12, minCells: 2, maxCells: 3 },
 };
 
 /**
@@ -43,7 +48,9 @@ export const TERRAINS = {
     hills: { label: 'Hills', color: '#c2a57b', attack: 0.9, defense: 1.25, moveCost: 1, passable: true },
     mountains: { label: 'Mountains', color: '#9b918a', attack: 0.6, defense: 1.5, moveCost: 2, passable: true },
     city: { label: 'City', color: '#c8c0c8', attack: 1.0, defense: 1.3, moveCost: 1, passable: true },
-    range: { label: 'Mountain range', color: '#5e5650', passable: false },
+    /** overlay: drawn on top of the borders it follows instead of as a tile. */
+    range: { label: 'Mountain range', color: '#5e5650', passable: false, overlay: true },
+    sea: { label: 'Sea', color: '#8fb3d3', passable: false },
 };
 
 /**

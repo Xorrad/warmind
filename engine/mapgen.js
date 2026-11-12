@@ -6,10 +6,15 @@
  *  2. build the Voronoi diagram: one cell = one province, shared edge = neighbours;
  *  3. make borders jagged (deterministic per edge, so both sides match, and
  *     confined to the two provinces they separate, so they never cross);
- *  4. assign terrain from smooth pseudo-noise;
- *  5. carve impassable mountain ranges along chains of borders;
- *  6. place faction capitals far apart and grow territories round-robin;
- *  7. append the ranges as extra (unowned, impassable) provinces.
+ *  4. flood low cells near the map edges into seas, merged in groups of a
+ *     few cells;
+ *  5. assign land terrain from smooth pseudo-noise;
+ *  6. carve impassable mountain ranges along chains of borders;
+ *  7. place faction capitals far apart and grow territories round-robin;
+ *  8. renumber: land provinces first, then seas, then ranges.
+ *
+ * While generating, every Voronoi cell is a province whose id is its cell
+ * index; seas and ranges only become provinces of their own at step 8.
  */
 
 import { Delaunay } from 'd3-delaunay';
@@ -27,8 +32,8 @@ import { MAP, FACTIONS, NAME_PARTS } from './config.js';
  * @property {boolean} isCapital
  * @property {number[]} neighbours Ids of provinces reachable in one move
  *   (always empty for impassable provinces).
- * @property {number[]} [borders] Impassable provinces only: ids of the
- *   provinces they touch.
+ * @property {number[]} [borders] Impassable provinces only (seas, ranges):
+ *   ids of the land provinces they touch.
  * @property {Point} center Centroid, used for labels and units.
  * @property {Point[]} polygon Outline (not closed: last point != first).
  *
@@ -97,11 +102,15 @@ export function generateMap(options = {}) {
     const used = new Set();
     for (const p of provinces) p.name = uniqueName(rng, used);
 
-    // 4. Terrain: rank provinces by noise so proportions are stable across seeds
+    // 4. Seas (before terrain and factions, which only consider land)
     const elevation = makeNoise(rng, o.width, o.height);
     const moisture = makeNoise(rng, o.width, o.height);
-    const byElevation = [...provinces].sort((a, b) => elevation(...b.center) - elevation(...a.center));
-    const n = provinces.length;
+    const seas = pickSeas(rng, provinces, elevation, o);
+    const land = provinces.filter((p) => p.terrain !== 'sea');
+
+    // 5. Terrain: rank land by noise so proportions are stable across seeds
+    const byElevation = [...land].sort((a, b) => elevation(...b.center) - elevation(...a.center));
+    const n = land.length;
     const nMountains = Math.round(n * o.terrainShare.mountains);
     const nHills = Math.round(n * o.terrainShare.hills);
     byElevation.slice(0, nMountains).forEach((p) => (p.terrain = 'mountains'));
@@ -109,41 +118,61 @@ export function generateMap(options = {}) {
     const lowlands = byElevation.slice(nMountains + nHills).sort((a, b) => moisture(...b.center) - moisture(...a.center));
     lowlands.slice(0, Math.round(n * o.terrainShare.forest)).forEach((p) => (p.terrain = 'forest'));
 
-    // 5. Mountain ranges (before factions, so territories grow around them)
+    // 6. Mountain ranges (before factions, so territories grow around them)
     const ranges = carveRanges(rng, provinces, edges, elevation, o);
 
-    // 6. Factions
-    const factionCount = Math.min(o.factionCount, FACTIONS.length, o.provinceCount);
-    const capitals = farthestPoints(rng, provinces, factionCount, o.width, o.height);
-    const factions = capitals.map((capital, id) => ({
-        id,
-        name: FACTIONS[id].name,
-        color: FACTIONS[id].color,
-        isPlayer: id === 0,
-        capital,
-    }));
-    growTerritories(rng, provinces, capitals);
+    // 7. Factions
+    const factionCount = Math.min(o.factionCount, FACTIONS.length, land.length);
+    const capitals = farthestPoints(rng, land, provinces, factionCount, o.width, o.height);
+    growTerritories(rng, provinces, land.length, capitals);
     for (const c of capitals) {
         provinces[c].isCapital = true;
         provinces[c].terrain = 'city';
     }
 
-    // 7. Ranges become provinces of their own, after the regular ones
+    // 8. Final numbering: land, then seas, then ranges
+    const newId = new Map(land.map((p, i) => [p.id, i]));
+    const remap = (ids) => ids.map((id) => newId.get(id)).sort((a, b) => a - b);
+    const result = land.map((p) => ({ ...p, id: newId.get(p.id), neighbours: remap(p.neighbours) }));
+    for (const group of seas) {
+        const outline = unionOutline(group, cells, edges);
+        const centers = group.map((c) => provinces[c].center);
+        const mean = [centers.reduce((s, c) => s + c[0], 0) / centers.length, centers.reduce((s, c) => s + c[1], 0) / centers.length];
+        const middle = centers.reduce((best, c) => (Math.hypot(c[0] - mean[0], c[1] - mean[1]) < Math.hypot(best[0] - mean[0], best[1] - mean[1]) ? c : best));
+        result.push({
+            id: result.length,
+            name: seaName(rng, used),
+            terrain: 'sea',
+            owner: -1,
+            isCapital: false,
+            neighbours: [],
+            borders: remap(outline.borders.filter((c) => provinces[c].terrain !== 'sea')),
+            center: middle,
+            polygon: roundPolygon(outline.polygon),
+        });
+    }
     for (const r of ranges) {
-        provinces.push({
-            id: provinces.length,
+        result.push({
+            id: result.length,
             name: `${uniqueName(rng, used)} Range`,
             terrain: 'range',
             owner: -1,
             isCapital: false,
             neighbours: [],
-            borders: r.borders,
+            borders: remap(r.borders),
             center: roundPoint(r.spine[Math.floor(r.spine.length / 2)]),
             polygon: roundPolygon(ribbon(rng, smooth(r.spine, 2), o.ranges.width)),
         });
     }
+    const factions = capitals.map((capital, id) => ({
+        id,
+        name: FACTIONS[id].name,
+        color: FACTIONS[id].color,
+        isPlayer: id === 0,
+        capital: newId.get(capital),
+    }));
 
-    return { seed, width: o.width, height: o.height, provinces, factions };
+    return { seed, width: o.width, height: o.height, provinces: result, factions };
 }
 
 /* ------------------------------------------------------------------ */
@@ -290,6 +319,147 @@ function noisyEdge(a, b, s1, s2, rng, o) {
 }
 
 /* ------------------------------------------------------------------ */
+/* Seas                                                                */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Turn the lowest cells near the map edges into sea, then group adjacent
+ * sea cells into sea provinces of minCells to maxCells cells. A cell is
+ * only flooded if the land stays in one piece, and lone sea cells (too
+ * small to form a sea) go back to land. Sea cells lose all adjacency.
+ * @returns {number[][]} Cell ids of each sea province.
+ */
+function pickSeas(rng, provinces, elevation, o) {
+    const { share, minCells, maxCells } = o.seas;
+    if (!share) return [];
+    const half = Math.min(o.width, o.height) / 2;
+    const edgeDist = (p) => Math.min(p.center[0], p.center[1], o.width - p.center[0], o.height - p.center[1]) / half;
+    const score = (p) => 0.4 * elevation(...p.center) + 0.6 * edgeDist(p);
+    const target = Math.round(provinces.length * share);
+
+    const sea = new Set();
+    for (const p of [...provinces].sort((a, b) => score(a) - score(b))) {
+        if (sea.size >= target) break;
+        sea.add(p.id);
+        if (!isConnected(provinces, sea)) sea.delete(p.id);
+    }
+
+    // Connected bodies of water; those smaller than a sea go back to land
+    const seaNeighbours = (id) => provinces[id].neighbours.filter((n) => sea.has(n));
+    const bodies = [];
+    const seen = new Set();
+    for (const id of [...sea].sort((a, b) => a - b)) {
+        if (seen.has(id)) continue;
+        const body = [id];
+        seen.add(id);
+        for (let i = 0; i < body.length; i++) {
+            for (const n of seaNeighbours(body[i])) {
+                if (!seen.has(n)) {
+                    seen.add(n);
+                    body.push(n);
+                }
+            }
+        }
+        if (body.length >= minCells) bodies.push(body);
+    }
+
+    // Split each body into compact groups, starting from its extremities
+    const groups = [];
+    for (const body of bodies) {
+        const free = new Set(body);
+        const bodyGroups = [];
+        while (free.size) {
+            const freeLinks = (id) => seaNeighbours(id).filter((n) => free.has(n)).length;
+            const seed = [...free].sort((a, b) => freeLinks(a) - freeLinks(b) || a - b)[0];
+            const size = rng.int(minCells, maxCells);
+            const group = [seed];
+            free.delete(seed);
+            while (group.length < size) {
+                const options = [...new Set(group.flatMap(seaNeighbours))].filter((n) => free.has(n));
+                if (!options.length) break;
+                const links = (id) => seaNeighbours(id).filter((n) => group.includes(n)).length;
+                const next = options.sort((a, b) => links(b) - links(a) || a - b)[0];
+                group.push(next);
+                free.delete(next);
+            }
+            bodyGroups.push(group);
+        }
+        // Too-small leftovers join the smallest neighbouring group
+        for (const small of bodyGroups.filter((g) => g.length < minCells)) {
+            const touching = bodyGroups.filter((g) => g !== small && g.length && g.some((c) => small.some((s) => seaNeighbours(s).includes(c))));
+            if (!touching.length) continue;
+            const target = touching.sort((a, b) => a.length - b.length)[0];
+            target.push(...small.splice(0));
+        }
+        groups.push(...bodyGroups.filter((g) => g.length));
+    }
+
+    // Flood the kept cells: they leave the land graph
+    for (const id of groups.flat()) {
+        const p = provinces[id];
+        p.terrain = 'sea';
+        for (const n of p.neighbours) provinces[n].neighbours = provinces[n].neighbours.filter((m) => m !== id);
+        p.neighbours = [];
+    }
+    return groups;
+}
+
+/**
+ * Outline of a group of adjacent cells: walk the edges that are not shared
+ * by two cells of the group, following their jagged lines. Also returns
+ * the cells on the other side of those edges.
+ * @returns {{ polygon: Point[], borders: number[] }}
+ */
+function unionOutline(group, cells, edges) {
+    const inGroup = new Set(group);
+    const next = new Map();
+    const borders = new Set();
+    for (const c of group) {
+        const poly = cells[c];
+        for (let i = 0; i < poly.length; i++) {
+            const a = poly[i];
+            const b = poly[(i + 1) % poly.length];
+            const [ka, kb] = [vertexKey(a), vertexKey(b)];
+            const e = edges.get(ka < kb ? `${ka}|${kb}` : `${kb}|${ka}`);
+            const other = e.cells.find((x) => x !== c);
+            if (other !== undefined && inGroup.has(other)) continue;
+            if (other !== undefined) borders.add(other);
+            next.set(ka, [a, b]);
+        }
+    }
+    // Chain the edges into loops; keep the outer (largest) one
+    const loops = [];
+    const done = new Set();
+    for (const startKey of next.keys()) {
+        const loop = [];
+        let k = startKey;
+        while (next.has(k) && !done.has(k)) {
+            done.add(k);
+            const [a, b] = next.get(k);
+            loop.push(a, ...edgeLine(edges, a, b));
+            k = vertexKey(b);
+        }
+        if (loop.length >= 3) loops.push(loop);
+    }
+    const polygon = loops.reduce((best, l) => (Math.abs(area(l)) > Math.abs(area(best)) ? l : best), loops[0] ?? []);
+    return { polygon, borders: [...borders] };
+}
+
+function seaName(rng, used) {
+    for (let tries = 0; tries < 50; tries++) {
+        const base = rng.pick(NAME_PARTS.start) + rng.pick(NAME_PARTS.middle) + rng.pick(NAME_PARTS.end);
+        const name = rng.chance(0.5) ? `${base} Sea` : `Gulf of ${base}`;
+        if (!used.has(name)) {
+            used.add(name);
+            return name;
+        }
+    }
+    const fallback = `Sea ${used.size + 1}`;
+    used.add(fallback);
+    return fallback;
+}
+
+/* ------------------------------------------------------------------ */
 /* Mountain ranges                                                     */
 /* ------------------------------------------------------------------ */
 
@@ -310,6 +480,7 @@ function carveRanges(rng, provinces, edges, elevation, o) {
     const vertices = new Map();
     for (const e of edges.values()) {
         if (e.cells.length !== 2 || !inside(e.a) || !inside(e.b)) continue;
+        if (e.cells.some((c) => provinces[c].terrain === 'sea')) continue;
         for (const [from, fk, to, tk] of [[e.a, e.ka, e.b, e.kb], [e.b, e.kb, e.a, e.ka]]) {
             if (!vertices.has(fk)) vertices.set(fk, { point: from, links: [] });
             vertices.get(fk).links.push({ to: tk, point: to, cells: e.cells });
@@ -391,18 +562,27 @@ function link(provinces, a, b) {
     provinces[b].neighbours.push(a);
 }
 
-function isConnected(provinces) {
-    const seen = new Set([0]);
-    const queue = [0];
+/**
+ * Whether every land province can reach every other one. Cells in
+ * `excluded` (and seas) count as water.
+ * @param {Province[]} provinces
+ * @param {Set<number>} [excluded]
+ */
+function isConnected(provinces, excluded = new Set()) {
+    const isLand = (p) => p.terrain !== 'sea' && !excluded.has(p.id);
+    const land = provinces.filter(isLand);
+    if (land.length === 0) return true;
+    const seen = new Set([land[0].id]);
+    const queue = [land[0].id];
     while (queue.length) {
         for (const n of provinces[queue.shift()].neighbours) {
-            if (!seen.has(n)) {
+            if (!seen.has(n) && isLand(provinces[n])) {
                 seen.add(n);
                 queue.push(n);
             }
         }
     }
-    return seen.size === provinces.length;
+    return seen.size === land.length;
 }
 
 /** Chaikin corner cutting; keeps both endpoints. */
@@ -639,11 +819,11 @@ function uniqueName(rng, used) {
  * keeping away from the map edges (corner capitals are too easy to defend
  * and look odd).
  */
-function farthestPoints(rng, provinces, count, width, height) {
+function farthestPoints(rng, land, provinces, count, width, height) {
     const margin = 0.12 * Math.min(width, height);
     const edgeDist = (p) => Math.min(p.center[0], p.center[1], width - p.center[0], height - p.center[1]);
-    let candidates = provinces.filter((p) => edgeDist(p) > margin);
-    if (candidates.length < count) candidates = provinces;
+    let candidates = land.filter((p) => edgeDist(p) > margin);
+    if (candidates.length < count) candidates = land;
 
     const dist = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
     const chosen = [rng.pick(candidates).id];
@@ -667,14 +847,14 @@ function farthestPoints(rng, provinces, count, width, height) {
  * Each faction claims one adjacent free province per round, so
  * territories stay connected and roughly the same size.
  */
-function growTerritories(rng, provinces, capitals) {
+function growTerritories(rng, provinces, landCount, capitals) {
     const frontiers = capitals.map(() => []);
     capitals.forEach((c, f) => {
         provinces[c].owner = f;
         frontiers[f].push(...provinces[c].neighbours);
     });
 
-    let remaining = provinces.length - capitals.length;
+    let remaining = landCount - capitals.length;
     while (remaining > 0) {
         let progressed = false;
         for (const f of rng.shuffle(capitals.map((_, i) => i))) {

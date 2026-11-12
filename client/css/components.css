@@ -34,6 +34,15 @@
     filter: brightness(1.3);
 }
 
+.province.terrain-sea {
+    stroke: #5d86a8;
+    stroke-width: 1;
+}
+
+.province.terrain-sea:hover {
+    filter: brightness(1.08);
+}
+
 .province.selected {
     stroke: #fff;
     stroke-width: 4;

@@ -50,14 +50,14 @@ export function createMapView(container, { onSelect } = {}) {
         svg.setAttribute('viewBox', `0 0 ${map.width} ${map.height}`);
 
         const provinceLayer = el('g', { class: 'provinces' });
-        // Ranges lie on top of the borders they follow
-        const rangeLayer = el('g', { class: 'ranges' });
+        // Overlays (mountain ranges) lie on top of the borders they follow
+        const overlayLayer = el('g', { class: 'overlays' });
         const markerLayer = el('g', { class: 'markers' });
 
         for (const p of map.provinces) {
-            const passable = TERRAINS[p.terrain].passable;
+            const terrain = TERRAINS[p.terrain];
             const path = el('path', {
-                class: passable ? 'province' : 'province impassable',
+                class: `province terrain-${p.terrain}${terrain.passable ? '' : ' impassable'}`,
                 d: `M${p.polygon.map((pt) => pt.join(',')).join('L')}Z`,
                 'data-id': p.id,
                 fill: fillFor(p),
@@ -66,7 +66,7 @@ export function createMapView(container, { onSelect } = {}) {
             title.textContent = `${p.name} (${TERRAINS[p.terrain].label})`;
             path.append(title);
             paths.set(p.id, path);
-            (passable ? provinceLayer : rangeLayer).append(path);
+            (terrain.overlay ? overlayLayer : provinceLayer).append(path);
 
             if (p.isCapital) {
                 markerLayer.append(el('circle', { class: 'capital-marker', cx: p.center[0], cy: p.center[1], r: 9 }));
@@ -75,7 +75,7 @@ export function createMapView(container, { onSelect } = {}) {
                 markerLayer.append(label);
             }
         }
-        svg.replaceChildren(provinceLayer, rangeLayer, markerLayer);
+        svg.replaceChildren(provinceLayer, overlayLayer, markerLayer);
         onSelect?.(null);
     }
 
