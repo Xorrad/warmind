@@ -17,15 +17,35 @@
 }
 
 .brand {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.1;
+}
+
+.brand-title {
     font-weight: 800;
     font-size: 1.4rem;
     letter-spacing: 0.04em;
 }
 
-.brand small {
+.brand-version {
     font-size: 0.65rem;
     font-weight: 500;
     color: var(--text-muted);
+}
+
+/* Short vertical rule between the top bar groups */
+.topbar-divider {
+    align-self: stretch;
+    width: 2px;
+    margin: 4px 0;
+    background: var(--border);
+    opacity: 0.35;
+}
+
+/* The divider before the controls carries them to the right */
+.topbar-divider.push {
+    margin-left: auto;
 }
 
 .map-area {
@@ -61,6 +81,11 @@
     .topbar {
         gap: 10px;
         padding: 8px 12px;
+    }
+
+    /* Groups wrap onto several lines: dividers would dangle */
+    .topbar-divider {
+        display: none;
     }
 
     .body {
