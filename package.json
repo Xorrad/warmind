@@ -1,0 +1,37 @@
+{
+  "name": "warmind",
+  "version": "0.1.0",
+  "description": "A motivational website made as a project for university.",
+  "main": "server/index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "start": "node server/index.js",
+    "dev": "node --watch server/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Xorrad/warmind.git"
+  },
+  "keywords": [],
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/Xorrad/warmind/issues"
+  },
+  "homepage": "https://github.com/Xorrad/warmind#readme",
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "better-sqlite3": "^13.1.1",
+    "d3-delaunay": "^6.0.6",
+    "express": "^5.3.0",
+    "express-session": "^1.19.0"
+  },
+  "devDependencies": {
+    "eslint": "^10.14.0",
+    "jsdoc": "^4.0.5",
+    "prettier": "^3.10.1",
+    "vitest": "^5.1.0"
+  }
+}
