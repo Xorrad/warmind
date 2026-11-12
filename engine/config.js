@@ -55,17 +55,19 @@ export const TERRAINS = {
 
 /**
  * Daily action points. Each day a faction gets
- *   base + perProvince × provinces owned
- * minus, for every unfinished task, severity × urgency, where
- *   urgency = clamp(1 − daysLeft / urgencyWindowDays, minUrgency, 1)
+ *   base = base + perProvince × provinces owned
+ * minus, for every unfinished task, severity × elapsed / total, where
+ *   elapsed = time since the task was created, total = creation to due date
+ *   (daily tasks run over their day, so they cost their full severity by
+ *   midnight). The sum of these losses is capped at maxPenaltyShare × base:
+ *   above it, every task's loss is scaled down in proportion.
  * plus completionBonus per task completed that day (up to completionBonusCap).
  * Any overdue unfinished task sets the whole amount to zero.
  */
 export const POINTS = {
     base: 5,
     perProvince: 0.2,
-    urgencyWindowDays: 7,
-    minUrgency: 0.2,
+    maxPenaltyShare: 0.9,
     completionBonus: 1,
     completionBonusCap: 5,
 };

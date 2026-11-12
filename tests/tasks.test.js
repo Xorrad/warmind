@@ -11,7 +11,7 @@ import {
     dayKey,
     shiftDay,
 } from '../engine/tasks.js';
-import { computeDailyPoints, urgency } from '../engine/points.js';
+import { computeDailyPoints, elapsedShare } from '../engine/points.js';
 import { settleDays, estimateToday, endOfDay, completionGains } from '../engine/tick.js';
 import { POINTS } from '../engine/config.js';
 
@@ -124,22 +124,41 @@ describe('computeDailyPoints', () => {
         expect(computeDailyPoints([], { provincesOwned, now }).total).toBe(Math.round(base));
     });
 
-    it('scales urgency from minUrgency to 1 as the due date nears', () => {
-        expect(urgency(0)).toBe(1);
-        expect(urgency(POINTS.urgencyWindowDays * 10)).toBe(POINTS.minUrgency);
-        expect(urgency(1)).toBeGreaterThan(urgency(3));
+    it('measures the share of its time a task has used up', () => {
+        // Created 3 days ago, due in 1 day: 3/4 of its time is gone
+        const t = { ...oneOff({ dueAt: inDays(1) }), createdAt: inDays(-3) };
+        expect(elapsedShare(t, now)).toBeCloseTo(0.75);
+        expect(elapsedShare({ ...t, createdAt: now.toISOString() }, now)).toBe(0);
+        expect(elapsedShare({ ...t, dueAt: inDays(-1) }, now)).toBe(1);
+        // Daily tasks run over their day: 10:00 is 10/24 of it
+        expect(elapsedShare(daily(), now)).toBeCloseTo(10 / 24, 3);
     });
 
-    it('subtracts severity × urgency for each unfinished task', () => {
-        const t = oneOff({ severity: 4, dueAt: inDays(1) });
+    it('subtracts severity × elapsed / total for each unfinished task', () => {
+        const t = { ...oneOff({ severity: 4, dueAt: inDays(1) }), createdAt: inDays(-3) };
         const result = computeDailyPoints([t], { provincesOwned, now });
-        expect(result.penalty).toBeCloseTo(4 * urgency(1));
-        expect(result.total).toBe(Math.round(base - 4 * urgency(1)));
+        expect(result.penalty).toBeCloseTo(3);
+        expect(result.capped).toBe(false);
+        expect(result.total).toBe(Math.round(base - 3));
     });
 
-    it('counts unfinished recurring tasks at full severity', () => {
-        const result = computeDailyPoints([daily({ severity: 2 })], { provincesOwned, now });
-        expect(result.penalty).toBe(2);
+    it('caps the losses at 90% of the base, shared in proportion', () => {
+        const heavy = { ...oneOff({ severity: 5, dueAt: inDays(1) }), createdAt: inDays(-9) }; // 5 × 0.9 = 4.5
+        const light = { ...oneOff({ severity: 1, dueAt: inDays(1) }), createdAt: inDays(-9) }; // 0.9
+        const many = Array.from({ length: 6 }, () => ({ ...heavy, id: heavy.id + Math.random() }));
+        const result = computeDailyPoints([...many, light], { provincesOwned, now });
+        expect(result.rawPenalty).toBeCloseTo(6 * 4.5 + 0.9);
+        expect(result.capped).toBe(true);
+        expect(result.penalty).toBeCloseTo(POINTS.maxPenaltyShare * base);
+        const amount = (id) => result.penalties.find((p) => p.taskId === id).amount;
+        expect(amount(many[0].id) / amount(light.id)).toBeCloseTo(5);
+        expect(result.total).toBe(Math.round(base * (1 - POINTS.maxPenaltyShare)));
+    });
+
+    it('charges unfinished daily tasks for the part of the day gone, all of it by midnight', () => {
+        const run = daily({ severity: 2 });
+        expect(computeDailyPoints([run], { provincesOwned, now }).penalty).toBeCloseTo(2 * (10 / 24), 3);
+        expect(computeDailyPoints([run], { provincesOwned, now: endOfDay('2026-11-12') }).penalty).toBeCloseTo(2, 5);
     });
 
     it('rewards tasks completed today, up to the cap', () => {
@@ -156,9 +175,9 @@ describe('computeDailyPoints', () => {
         expect(result.total).toBe(0);
     });
 
-    it('never goes negative', () => {
-        const heavy = Array.from({ length: 10 }, () => oneOff({ severity: 5, dueAt: inDays(0.1) }));
-        expect(computeDailyPoints(heavy, { provincesOwned, now }).total).toBe(0);
+    it('always leaves something when nothing is overdue', () => {
+        const heavy = Array.from({ length: 30 }, () => ({ ...oneOff({ severity: 5, dueAt: inDays(0.1) }), createdAt: inDays(-5) }));
+        expect(computeDailyPoints(heavy, { provincesOwned, now }).total).toBeGreaterThan(0);
     });
 });
 

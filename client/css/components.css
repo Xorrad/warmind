@@ -277,6 +277,12 @@
     font-weight: 700;
 }
 
+.pp-cap {
+    margin: 2px 0 2px 10px;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
 .pp-alert {
     margin-top: 8px;
     padding: 8px 10px;

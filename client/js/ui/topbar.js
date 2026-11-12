@@ -84,10 +84,12 @@ function popover(balance, estimate, { tasks, provincesOwned, completedToday }) {
         h('div', { class: 'pp-section' }, 'Estimated gain at midnight'),
         row(`Faction size (${provincesOwned} provinces)`, `+${fmt(estimate.base)}`),
         row(`${estimate.penalties.length} unfinished task${estimate.penalties.length === 1 ? '' : 's'}`, `−${fmt(estimate.penalty)}`, estimate.penalty ? 'neg' : ''),
+        estimate.capped &&
+            h('div', { class: 'pp-cap' }, `Capped at ${Math.round(POINTS.maxPenaltyShare * 100)}% of the faction size (−${fmt(estimate.rawPenalty)} without it), shared between all tasks.`),
         row(`${completedToday} completed today`, `+${estimate.bonus}`, estimate.bonus ? 'pos' : ''),
         penalized
             ? row('Overdue task: whole day lost', '0', 'total neg')
-            : row(estimate.base - estimate.penalty + estimate.bonus < 0 ? 'Total (never below 0)' : 'Total', `+${estimate.total}`, 'total'),
+            : row('Total', `+${estimate.total}`, 'total'),
         penalized &&
             h(
                 'div',
@@ -110,6 +112,10 @@ function popover(balance, estimate, { tasks, provincesOwned, completedToday }) {
                 h('div', { class: 'pp-section' }, 'Costing the most'),
                 ...heaviest.map((p) => row(byId.get(p.taskId)?.title ?? '?', `−${fmt(p.amount)}`, 'neg')),
             ),
-        h('p', { class: 'pp-note' }, `Points are credited when the day ends. Completing tasks removes their cost and earns a bonus (up to +${POINTS.completionBonusCap}).`),
+        h(
+            'p',
+            { class: 'pp-note' },
+            `A task costs its severity × the share of its time already gone. Points are credited when the day ends; completing tasks removes their cost and earns a bonus (up to +${POINTS.completionBonusCap}).`,
+        ),
     ].filter(Boolean);
 }
