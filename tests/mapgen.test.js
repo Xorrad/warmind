@@ -128,6 +128,24 @@ describe('mountain ranges', () => {
         expect(edges(carved)).toBeLessThan(edges(flat));
     });
 
+    it.each([0.2, 0.5, 0.8, 1.5])('have outlines that never cross themselves (borderJitter %s)', (borderJitter) => {
+        const orient = (p, q, r) => Math.sign((q[0] - p[0]) * (r[1] - p[1]) - (q[1] - p[1]) * (r[0] - p[0]));
+        const crosses = (a, b, c, d) => orient(a, b, c) * orient(a, b, d) < 0 && orient(c, d, a) * orient(c, d, b) < 0;
+        for (const seed of seeds) {
+            for (const r of generateMap({ seed, borderJitter }).provinces.filter(isRange)) {
+                const poly = r.polygon;
+                const n = poly.length;
+                expect(n).toBeGreaterThanOrEqual(3);
+                for (let i = 0; i < n; i++) {
+                    for (let k = i + 2; k < n; k++) {
+                        if (i === 0 && k === n - 1) continue;
+                        expect(crosses(poly[i], poly[(i + 1) % n], poly[k], poly[(k + 1) % n]), `${r.name} (seed ${seed})`).toBe(false);
+                    }
+                }
+            }
+        }
+    });
+
     it('can be disabled', () => {
         const { provinces } = generateMap({ seed: 'demo', ranges: { ...MAP.ranges, count: 0 } });
         expect(provinces.filter(isRange)).toHaveLength(0);
@@ -149,5 +167,27 @@ describe('movement rules', () => {
         expect(canMove(map, land.id, land.neighbours[0])).toBe(true);
         const far = map.provinces.find((p) => p.id !== land.id && isPassable(p) && !land.neighbours.includes(p.id));
         expect(canMove(map, land.id, far.id)).toBe(false);
+    });
+});
+
+describe('borders', () => {
+    const orient = (p, q, r) => Math.sign((q[0] - p[0]) * (r[1] - p[1]) - (q[1] - p[1]) * (r[0] - p[0]));
+    const crosses = (a, b, c, d) => orient(a, b, c) * orient(a, b, d) < 0 && orient(c, d, a) * orient(c, d, b) < 0;
+
+    it.each([0.5, 1, 2])('never cross each other, even with borderJitter %s', (borderJitter) => {
+        const { provinces } = generateMap({ seed: 'demo', provinceCount: 80, borderJitter });
+        const segments = new Map();
+        for (const p of provinces.filter((q) => TERRAINS[q.terrain].passable)) {
+            p.polygon.forEach((a, i) => {
+                const b = p.polygon[(i + 1) % p.polygon.length];
+                segments.set([String(a), String(b)].sort().join('|'), [a, b]);
+            });
+        }
+        const list = [...segments.values()];
+        let crossings = 0;
+        for (let i = 0; i < list.length; i++) {
+            for (let k = i + 1; k < list.length; k++) if (crosses(...list[i], ...list[k])) crossings++;
+        }
+        expect(crossings).toBe(0);
     });
 });

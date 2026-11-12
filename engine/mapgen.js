@@ -4,7 +4,8 @@
  * Pipeline:
  *  1. scatter random points and relax them (Lloyd) for even province sizes;
  *  2. build the Voronoi diagram: one cell = one province, shared edge = neighbours;
- *  3. make borders jagged (deterministic per edge, so both sides match);
+ *  3. make borders jagged (deterministic per edge, so both sides match, and
+ *     confined to the two provinces they separate, so they never cross);
  *  4. assign terrain from smooth pseudo-noise;
  *  5. carve impassable mountain ranges along chains of borders;
  *  6. place faction capitals far apart and grow territories round-robin;
@@ -74,11 +75,12 @@ export function generateMap(options = {}) {
 
     // 2. Voronoi cells and adjacency
     const voronoi = new Delaunay(points).voronoi(bounds);
+    const cells = Array.from({ length: o.provinceCount }, (_, i) => openRing(voronoi.cellPolygon(i)));
+    const sites = Array.from({ length: o.provinceCount }, (_, i) => [points[2 * i], points[2 * i + 1]]);
+    const edges = buildEdges(cells, sites, o);
     const provinces = [];
-    const cells = [];
     for (let i = 0; i < o.provinceCount; i++) {
-        const raw = openRing(voronoi.cellPolygon(i));
-        cells.push(raw);
+        const raw = cells[i];
         provinces.push({
             id: i,
             name: '',
@@ -87,7 +89,7 @@ export function generateMap(options = {}) {
             isCapital: false,
             neighbours: [...voronoi.neighbors(i)],
             center: roundPoint(centroid(raw)),
-            polygon: roundPolygon(jaggedPolygon(raw, o)),
+            polygon: roundPolygon(jaggedPolygon(raw, edges)),
         });
     }
 
@@ -108,7 +110,7 @@ export function generateMap(options = {}) {
     lowlands.slice(0, Math.round(n * o.terrainShare.forest)).forEach((p) => (p.terrain = 'forest'));
 
     // 5. Mountain ranges (before factions, so territories grow around them)
-    const ranges = carveRanges(rng, provinces, cells, elevation, o);
+    const ranges = carveRanges(rng, provinces, edges, elevation, o);
 
     // 6. Factions
     const factionCount = Math.min(o.factionCount, FACTIONS.length, o.provinceCount);
@@ -178,68 +180,114 @@ const round1 = (n) => Math.round(n * 10) / 10;
 const roundPoint = ([x, y]) => [round1(x), round1(y)];
 const roundPolygon = (poly) => poly.map(roundPoint);
 
+const vertexKey = (p) => `${p[0].toFixed(2)},${p[1].toFixed(2)}`;
+
 /**
- * Replace each straight inner edge by a jagged line. Edges on the map
- * border stay straight.
+ * @typedef {object} Edge
+ * @property {Point} a
+ * @property {Point} b
+ * @property {string} ka Key of a.
+ * @property {string} kb Key of b.
+ * @property {number[]} cells Ids of the one (map border) or two cells sharing it.
+ * @property {Point[]} inner Jagged points from a to b, endpoints excluded.
  */
-function jaggedPolygon(poly, o) {
+
+/**
+ * Collect every Voronoi edge once, with the cells on each side, and build
+ * its jagged line. Edges on the map border stay straight.
+ * @returns {Map<string, Edge>}
+ */
+function buildEdges(cells, sites, o) {
+    const edges = new Map();
+    cells.forEach((poly, id) => {
+        for (let i = 0; i < poly.length; i++) {
+            const a = poly[i];
+            const b = poly[(i + 1) % poly.length];
+            const [ka, kb] = [vertexKey(a), vertexKey(b)];
+            const k = ka < kb ? `${ka}|${kb}` : `${kb}|${ka}`;
+            if (!edges.has(k)) edges.set(k, ka < kb ? { a, b, ka, kb, cells: [], inner: [] } : { a: b, b: a, ka: kb, kb: ka, cells: [], inner: [] });
+            edges.get(k).cells.push(id);
+        }
+    });
+    for (const [k, e] of edges) {
+        if (e.cells.length !== 2) continue;
+        e.inner = noisyEdge(e.a, e.b, sites[e.cells[0]], sites[e.cells[1]], createRng(hashString(k)), o);
+    }
+    return edges;
+}
+
+/** Jagged points of the edge from a to b (endpoints excluded), in that direction. */
+function edgeLine(edges, a, b) {
+    const [ka, kb] = [vertexKey(a), vertexKey(b)];
+    const e = edges.get(ka < kb ? `${ka}|${kb}` : `${kb}|${ka}`);
+    if (!e) return [];
+    return e.ka === ka ? e.inner : [...e.inner].reverse();
+}
+
+/** Replace each straight edge of a cell by its jagged line. */
+function jaggedPolygon(poly, edges) {
     const out = [];
     for (let i = 0; i < poly.length; i++) {
-        const a = poly[i];
-        const b = poly[(i + 1) % poly.length];
-        out.push(a);
-        if (!isOnBorder(a, b, o)) out.push(...jaggedEdge(a, b, o));
+        out.push(poly[i], ...edgeLine(edges, poly[i], poly[(i + 1) % poly.length]));
     }
     return out;
 }
 
-function isOnBorder(a, b, o) {
-    const eps = 1e-6;
-    const same = (v, w, t) => Math.abs(v - t) < eps && Math.abs(w - t) < eps;
-    return same(a[0], b[0], 0) || same(a[0], b[0], o.width) || same(a[1], b[1], 0) || same(a[1], b[1], o.height);
-}
-
 /**
- * Intermediate points of a jagged edge between a and b (endpoints excluded).
- * The randomness is seeded by the edge itself, so the two provinces that
- * share it generate exactly the same line.
+ * Jagged line between a and b, staying inside the two triangles (a, b, s1)
+ * and (a, b, s2) where s1 and s2 are the sites of the cells on either side.
+ * Those triangles fan out from each site and never overlap from one edge
+ * to another, so borders cannot cross or fold over each other, whatever
+ * the jitter.
+ *
+ * The line is computed as a height v(u) above the segment (u along it,
+ * both in edge-length units) by midpoint displacement, then softly
+ * squeezed under the triangles' envelope. Since the allowed region is
+ * convex in (u, v), the straight pieces between samples stay inside too.
+ * @returns {Point[]} Points from a to b, endpoints excluded.
  */
-function jaggedEdge(a, b, o) {
-    const key = (p) => `${p[0].toFixed(2)},${p[1].toFixed(2)}`;
-    const ka = key(a);
-    const kb = key(b);
-    const reversed = ka > kb;
-    const [p, q] = reversed ? [b, a] : [a, b];
-    const rng = createRng(hashString(reversed ? `${kb}|${ka}` : `${ka}|${kb}`));
+function noisyEdge(a, b, s1, s2, rng, o) {
+    const dx = b[0] - a[0];
+    const dy = b[1] - a[1];
+    const len = Math.hypot(dx, dy);
+    if (len === 0 || o.borderDepth <= 0) return [];
+    const local = ([x, y]) => [((x - a[0]) * dx + (y - a[1]) * dy) / len ** 2, ((x - a[0]) * -dy + (y - a[1]) * dx) / len ** 2];
+    const [above, below] = [local(s1), local(s2)].sort((p, q) => q[1] - p[1]);
+    if (above[1] <= 0 || below[1] >= 0) return []; // degenerate: sites not on both sides
 
-    let line = [p, q];
+    // Height of a triangle (u = 0..1 base, apex at site) above the base at u
+    const envelope = ([su, sv], u) => {
+        const h = Math.abs(sv);
+        const left = su > 0 ? u / su : Infinity;
+        const right = su < 1 ? (1 - u) / (1 - su) : Infinity;
+        return 0.9 * h * Math.min(left, right);
+    };
+
+    const n = 2 ** o.borderDepth;
+    const heights = new Array(n + 1).fill(0);
     let amp = o.borderJitter;
-    for (let d = 0; d < o.borderDepth; d++) {
-        const next = [line[0]];
-        for (let i = 0; i < line.length - 1; i++) {
-            const [x0, y0] = line[i];
-            const [x1, y1] = line[i + 1];
-            const dx = x1 - x0;
-            const dy = y1 - y0;
-            const offset = (rng.next() - 0.5) * 2 * amp; // fraction of segment length
-            const mx = (x0 + x1) / 2 - dy * offset;
-            const my = (y0 + y1) / 2 + dx * offset;
-            next.push([clamp(mx, 0, o.width), clamp(my, 0, o.height)], line[i + 1]);
+    for (let step = n; step > 1; step /= 2) {
+        for (let l = 0; l < n; l += step) {
+            const r = l + step;
+            heights[l + step / 2] = (heights[l] + heights[r]) / 2 + (rng.next() - 0.5) * 2 * amp * (step / n);
         }
-        line = next;
         amp *= 0.6;
     }
-    const inner = line.slice(1, -1);
-    return reversed ? inner.reverse() : inner;
-}
 
-const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
+    const out = [];
+    for (let i = 1; i < n; i++) {
+        const u = i / n;
+        const raw = heights[i];
+        const limit = raw >= 0 ? envelope(above, u) : envelope(below, u);
+        const v = limit > 0 ? limit * Math.tanh(raw / limit) : 0;
+        out.push([a[0] + dx * u - dy * v, a[1] + dy * u + dx * v]);
+    }
+    return out;
+}
 
 /* ------------------------------------------------------------------ */
 /* Mountain ranges                                                     */
 /* ------------------------------------------------------------------ */
-
-const vertexKey = (p) => `${p[0].toFixed(2)},${p[1].toFixed(2)}`;
 
 /**
  * Lay impassable ranges along winding chains of Voronoi edges. Each edge of
@@ -248,24 +296,13 @@ const vertexKey = (p) => `${p[0].toFixed(2)},${p[1].toFixed(2)}`;
  * reachable. Ranges never touch each other or the map edge.
  * @returns {{ spine: Point[], borders: number[] }[]}
  */
-function carveRanges(rng, provinces, cells, elevation, o) {
+function carveRanges(rng, provinces, edges, elevation, o) {
     const { count, minEdges, maxEdges } = o.ranges;
     if (!count) return [];
     const margin = 0.04 * Math.min(o.width, o.height);
     const inside = ([x, y]) => x > margin && y > margin && x < o.width - margin && y < o.height - margin;
 
     // Graph of Voronoi vertices linked by the interior edges they share
-    const edges = new Map();
-    cells.forEach((poly, id) => {
-        for (let i = 0; i < poly.length; i++) {
-            const a = poly[i];
-            const b = poly[(i + 1) % poly.length];
-            const [ka, kb] = [vertexKey(a), vertexKey(b)];
-            const k = ka < kb ? `${ka}|${kb}` : `${kb}|${ka}`;
-            if (!edges.has(k)) edges.set(k, { a, b, ka, kb, cells: [] });
-            edges.get(k).cells.push(id);
-        }
-    });
     const vertices = new Map();
     for (const e of edges.values()) {
         if (e.cells.length !== 2 || !inside(e.a) || !inside(e.b)) continue;
@@ -290,6 +327,7 @@ function carveRanges(rng, provinces, cells, elevation, o) {
         // step, which gives the snake-like shape
         const target = rng.int(minEdges, maxEdges);
         let heading = rng.range(0, Math.PI * 2);
+        let lastDir = null;
         const path = [start];
         const steps = [];
         while (steps.length < target) {
@@ -301,6 +339,7 @@ function carveRanges(rng, provinces, cells, elevation, o) {
                 const dir = Math.atan2(link.point[1] - here.point[1], link.point[0] - here.point[0]);
                 const align = Math.cos(dir - heading);
                 if (align < 0) continue; // no sharp turn back
+                if (lastDir !== null && Math.cos(dir - lastDir) < -0.2) continue; // no hairpin
                 const score = align + rng.range(0, 0.6);
                 if (score > bestScore) {
                     bestScore = score;
@@ -310,6 +349,7 @@ function carveRanges(rng, provinces, cells, elevation, o) {
             if (!best) break;
             path.push(best.link.to);
             steps.push(best.link);
+            lastDir = best.dir;
             heading = best.dir + rng.range(-0.6, 0.6);
         }
         if (steps.length < minEdges) continue;
@@ -328,7 +368,7 @@ function carveRanges(rng, provinces, cells, elevation, o) {
         const spine = [vertices.get(start).point];
         let prev = spine[0];
         for (const step of steps) {
-            spine.push(...jaggedEdge(prev, step.point, o), step.point);
+            spine.push(...edgeLine(edges, prev, step.point), step.point);
             prev = step.point;
         }
         const borders = [...new Set(steps.flatMap((s) => s.cells))].sort((x, y) => x - y);
@@ -379,28 +419,181 @@ function smooth(line, passes) {
 /**
  * Thicken a line into a closed outline that tapers to a point at both ends
  * and swells and narrows along the way.
+ *
+ * Offsetting the line sideways folds over itself wherever it bends more
+ * tightly than the width, so instead the outline is the boundary of every
+ * point within the (varying) radius of the line: a distance field sampled
+ * on a fine grid and contoured with marching squares.
  * @param {Point[]} line
  * @returns {Point[]}
  */
 function ribbon(rng, line, width) {
     const phase = rng.range(0, Math.PI * 2);
     const freq = rng.range(2, 4) * Math.PI;
-    const left = [];
-    const right = [];
-    const last = line.length - 1;
-    line.forEach(([x, y], i) => {
-        const [px, py] = line[Math.max(i - 1, 0)];
-        const [nx, ny] = line[Math.min(i + 1, last)];
-        const len = Math.hypot(nx - px, ny - py) || 1;
-        const t = i / last;
-        const half = (width / 2) * Math.sin(Math.PI * t) ** 0.6 * (1 + 0.25 * Math.sin(freq * t + phase));
-        const ox = (-(ny - py) / len) * half;
-        const oy = ((nx - px) / len) * half;
-        left.push([x + ox, y + oy]);
-        right.push([x - ox, y - oy]);
+
+    // Radius at each point, from its position along the line (by length)
+    const along = [0];
+    for (let i = 1; i < line.length; i++) along.push(along[i - 1] + Math.hypot(line[i][0] - line[i - 1][0], line[i][1] - line[i - 1][1]));
+    const total = along.at(-1) || 1;
+    const radii = along.map((d) => {
+        const t = d / total;
+        return (width / 2) * Math.sin(Math.PI * t) ** 0.6 * (1 + 0.25 * Math.sin(freq * t + phase));
     });
-    return [...left, ...right.slice(1, -1).reverse()];
+
+    // Signed distance to the thick line on a grid (negative = inside)
+    const step = Math.max(width / 12, 0.5);
+    const pad = Math.max(...radii) + 2 * step;
+    const xs = line.map((p) => p[0]);
+    const ys = line.map((p) => p[1]);
+    const x0 = Math.min(...xs) - pad;
+    const y0 = Math.min(...ys) - pad;
+    const nx = Math.ceil((Math.max(...xs) + pad - x0) / step) + 1;
+    const ny = Math.ceil((Math.max(...ys) + pad - y0) / step) + 1;
+    const field = new Float64Array(nx * ny).fill(Infinity);
+    for (let i = 0; i < line.length - 1; i++) {
+        const [ax, ay] = line[i];
+        const [bx, by] = line[i + 1];
+        const [ra, rb] = [radii[i], radii[i + 1]];
+        const reach = Math.max(ra, rb) + 2 * step;
+        const dx = bx - ax;
+        const dy = by - ay;
+        const len2 = dx * dx + dy * dy || 1;
+        const gx0 = Math.max(0, Math.floor((Math.min(ax, bx) - reach - x0) / step));
+        const gx1 = Math.min(nx - 1, Math.ceil((Math.max(ax, bx) + reach - x0) / step));
+        const gy0 = Math.max(0, Math.floor((Math.min(ay, by) - reach - y0) / step));
+        const gy1 = Math.min(ny - 1, Math.ceil((Math.max(ay, by) + reach - y0) / step));
+        for (let gy = gy0; gy <= gy1; gy++) {
+            for (let gx = gx0; gx <= gx1; gx++) {
+                const px = x0 + gx * step;
+                const py = y0 + gy * step;
+                const t = clamp(((px - ax) * dx + (py - ay) * dy) / len2, 0, 1);
+                const d = Math.hypot(px - ax - t * dx, py - ay - t * dy) - (ra + (rb - ra) * t);
+                const k = gy * nx + gx;
+                if (d < field[k]) field[k] = d;
+            }
+        }
+    }
+
+    const loops = marchingSquares(field, nx, ny, (gx, gy) => [x0 + gx * step, y0 + gy * step]);
+    // Keep the main body (the thin tapered tips can leave specks)
+    const main = loops.reduce((best, l) => (Math.abs(area(l)) > Math.abs(area(best)) ? l : best), loops[0] ?? []);
+    return simplify(main, step / 4);
 }
+
+/**
+ * Contour the zero level of a grid field (negative = inside).
+ * @param {Float64Array} field Row-major values, nx by ny.
+ * @param {(gx: number, gy: number) => Point} toPoint Grid to map coordinates.
+ * @returns {Point[][]} Closed loops.
+ */
+function marchingSquares(field, nx, ny, toPoint) {
+    const value = (gx, gy) => field[gy * nx + gx];
+    const points = new Map();
+    const links = new Map();
+    // A crossing on the grid edge from node (gx, gy) going right (h) or down (v)
+    const crossing = (gx, gy, dir) => {
+        const id = `${gx},${gy},${dir}`;
+        if (!points.has(id)) {
+            const [hx, hy] = dir === 'h' ? [gx + 1, gy] : [gx, gy + 1];
+            const a = value(gx, gy);
+            const b = value(hx, hy);
+            const t = a / (a - b);
+            const [px, py] = toPoint(gx, gy);
+            const [qx, qy] = toPoint(hx, hy);
+            points.set(id, [px + (qx - px) * t, py + (qy - py) * t]);
+        }
+        return id;
+    };
+    const connect = (a, b) => {
+        for (const [from, to] of [[a, b], [b, a]]) {
+            if (!links.has(from)) links.set(from, []);
+            links.get(from).push(to);
+        }
+    };
+    // Cell sides: 0 top, 1 right, 2 bottom, 3 left
+    const SEGMENTS = { 1: [[3, 0]], 2: [[0, 1]], 3: [[3, 1]], 4: [[1, 2]], 6: [[0, 2]], 7: [[3, 2]], 8: [[2, 3]], 9: [[0, 2]], 11: [[1, 2]], 12: [[1, 3]], 13: [[0, 1]], 14: [[3, 0]] };
+    for (let gy = 0; gy < ny - 1; gy++) {
+        for (let gx = 0; gx < nx - 1; gx++) {
+            const v = [value(gx, gy), value(gx + 1, gy), value(gx + 1, gy + 1), value(gx, gy + 1)];
+            const code = (v[0] < 0) | ((v[1] < 0) << 1) | ((v[2] < 0) << 2) | ((v[3] < 0) << 3);
+            if (code === 0 || code === 15) continue;
+            const side = [() => crossing(gx, gy, 'h'), () => crossing(gx + 1, gy, 'v'), () => crossing(gx, gy + 1, 'h'), () => crossing(gx, gy, 'v')];
+            let segments = SEGMENTS[code];
+            if (code === 5 || code === 10) {
+                // Saddle: the cell centre decides whether the inside corners join
+                const centreInside = (v[0] + v[1] + v[2] + v[3]) / 4 < 0;
+                segments = (code === 5) === centreInside ? [[0, 1], [2, 3]] : [[3, 0], [1, 2]];
+            }
+            for (const [a, b] of segments) connect(side[a](), side[b]());
+        }
+    }
+
+    const loops = [];
+    const seen = new Set();
+    for (const startId of links.keys()) {
+        if (seen.has(startId)) continue;
+        const loop = [];
+        let prev = null;
+        let id = startId;
+        while (id !== undefined && !seen.has(id)) {
+            seen.add(id);
+            loop.push(points.get(id));
+            const next = links.get(id).find((n) => n !== prev && !seen.has(n));
+            prev = id;
+            id = next;
+        }
+        if (loop.length >= 3) loops.push(loop);
+    }
+    return loops;
+}
+
+/** Signed area of a polygon (shoelace). */
+function area(poly) {
+    let a = 0;
+    for (let i = 0; i < poly.length; i++) {
+        const [x0, y0] = poly[i];
+        const [x1, y1] = poly[(i + 1) % poly.length];
+        a += x0 * y1 - x1 * y0;
+    }
+    return a / 2;
+}
+
+/**
+ * Douglas-Peucker simplification of a closed polygon: drop points while
+ * staying within `tolerance` of the original outline.
+ */
+function simplify(poly, tolerance) {
+    if (poly.length < 4) return poly;
+    // Split the loop at its two most distant points into two open chains
+    let far = 0;
+    let farDist = -1;
+    for (let i = 1; i < poly.length; i++) {
+        const d = Math.hypot(poly[i][0] - poly[0][0], poly[i][1] - poly[0][1]);
+        if (d > farDist) [far, farDist] = [i, d];
+    }
+    const first = simplifyChain(poly.slice(0, far + 1), tolerance);
+    const second = simplifyChain([...poly.slice(far), poly[0]], tolerance);
+    return [...first.slice(0, -1), ...second.slice(0, -1)];
+}
+
+function simplifyChain(chain, tolerance) {
+    const [ax, ay] = chain[0];
+    const [bx, by] = chain.at(-1);
+    const dx = bx - ax;
+    const dy = by - ay;
+    const len = Math.hypot(dx, dy);
+    let index = -1;
+    let max = tolerance;
+    for (let i = 1; i < chain.length - 1; i++) {
+        const [x, y] = chain[i];
+        const d = len ? Math.abs((x - ax) * dy - (y - ay) * dx) / len : Math.hypot(x - ax, y - ay);
+        if (d > max) [index, max] = [i, d];
+    }
+    if (index === -1) return [chain[0], chain.at(-1)];
+    return [...simplifyChain(chain.slice(0, index + 1), tolerance).slice(0, -1), ...simplifyChain(chain.slice(index), tolerance)];
+}
+
+const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
 
 /* ------------------------------------------------------------------ */
 /* Terrain, names, factions                                            */
