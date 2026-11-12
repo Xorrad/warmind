@@ -73,6 +73,9 @@
     top: 12px;
     left: 12px;
     min-width: 200px;
+    max-width: min(320px, calc(100% - 24px));
+    max-height: calc(100% - 120px);
+    overflow-y: auto;
     padding: 12px 14px;
     background: var(--surface);
     border: 2px solid var(--border);
@@ -783,4 +786,642 @@
 
 .modal-actions .secondary {
     background: var(--surface);
+}
+
+/* ---------- Units on the map ---------- */
+
+.unit {
+    cursor: pointer;
+}
+
+.unit-box {
+    stroke: #fff;
+    stroke-width: 2;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.45));
+}
+
+.unit-size {
+    fill: #fff;
+    font-size: 11px;
+    font-weight: 800;
+    text-anchor: middle;
+    pointer-events: none;
+}
+
+.unit-bar-bg {
+    fill: rgba(0, 0, 0, 0.45);
+}
+
+.unit-bar {
+    fill: #fff;
+}
+
+.unit.spent .unit-box {
+    filter: saturate(0.45) brightness(0.9) drop-shadow(0 1px 2px rgba(0, 0, 0, 0.45));
+}
+
+.unit.spent .unit-size {
+    opacity: 0.75;
+}
+
+.unit:hover .unit-box {
+    stroke: #ffe58a;
+}
+
+.unit.selected .unit-box {
+    stroke: #ffd23f;
+    stroke-width: 3.5;
+}
+
+/* Merge candidates pulse until one is picked */
+.unit.candidate .unit-box {
+    stroke: #ffd23f;
+    stroke-dasharray: 4 3;
+    animation: candidate 0.8s linear infinite;
+}
+
+@keyframes candidate {
+    to {
+        stroke-dashoffset: -14;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .unit.candidate .unit-box {
+        animation: none;
+    }
+}
+
+/* Provinces the selected unit can move to */
+.province.move-target {
+    stroke: #ffd23f;
+    stroke-width: 3;
+    stroke-dasharray: 6 4;
+    filter: brightness(1.15);
+}
+
+.province.move-target.unaffordable {
+    stroke: #9aa3ad;
+    filter: saturate(0.6);
+}
+
+/* Enemy provinces the selected unit can attack */
+.province.attack-target {
+    stroke: #ff5a4e;
+    stroke-width: 3;
+    stroke-dasharray: 6 4;
+}
+
+.province.attack-target.unaffordable {
+    stroke: #9aa3ad;
+}
+
+.target-label {
+    font-size: 12px;
+    font-weight: 800;
+    fill: #1d232b;
+    text-anchor: middle;
+    paint-order: stroke;
+    stroke: #ffd23f;
+    stroke-width: 4px;
+    pointer-events: none;
+}
+
+.target-label.attack {
+    fill: #fff;
+    stroke: #c0392b;
+}
+
+.target-label.unaffordable {
+    stroke: #d5d9de;
+    fill: #5b6573;
+}
+
+/* ---------- Unit list in the info card ---------- */
+
+.unit-list {
+    margin: 10px 0 0;
+    padding: 8px 0 0;
+    border-top: 1px solid #c3cad3;
+    list-style: none;
+}
+
+.unit-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+    padding: 4px 6px;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    background: none;
+    text-align: left;
+    cursor: pointer;
+}
+
+.unit-row:hover,
+.unit-row.selected {
+    border-color: var(--border);
+    background: var(--bg);
+}
+
+.unit-name {
+    flex: 1;
+    font-weight: 600;
+}
+
+.unit-stats {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+
+.unit-details {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 2px 10px;
+    margin: 6px 0 4px 6px;
+    font-size: 0.85rem;
+}
+
+.unit-details dd {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0;
+}
+
+.meter {
+    display: inline-block;
+    width: 70px;
+    height: 6px;
+    border-radius: 3px;
+    background: #d5d9de;
+    overflow: hidden;
+}
+
+.meter span {
+    display: block;
+    height: 100%;
+    background: var(--success);
+}
+
+/* ---------- Action bar (bottom right of the map) ---------- */
+
+.action-bar {
+    position: absolute;
+    right: 12px;
+    bottom: 12px;
+    max-width: calc(100% - 24px);
+    padding: 8px 10px;
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.action-unit {
+    margin-bottom: 6px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--text-muted);
+}
+
+.action-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.action {
+    display: grid;
+    justify-items: center;
+    gap: 1px;
+    min-width: 64px;
+    padding: 6px 8px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--surface);
+    cursor: pointer;
+}
+
+.action:hover:not(:disabled) {
+    background: var(--bg);
+}
+
+.action.active,
+.action.active:hover:not(:disabled) {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+}
+
+.action:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.action-icon {
+    font-size: 1.1rem;
+    line-height: 1;
+}
+
+.action-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.action-cost {
+    font-size: 0.7rem;
+    color: inherit;
+    opacity: 0.8;
+}
+
+.action-hint {
+    margin: 6px 0 0;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.action-bar > .action-hint:only-child {
+    margin: 0;
+}
+
+/* ---------- Toast (action results) ---------- */
+
+.toast {
+    position: absolute;
+    left: 50%;
+    bottom: 12px;
+    transform: translateX(-50%);
+    max-width: min(420px, calc(100% - 24px));
+    margin: 0;
+    padding: 8px 14px;
+    border-radius: 999px;
+    background: var(--border);
+    color: #fff;
+    font-size: 0.9rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.toast.success {
+    background: var(--success);
+}
+
+.toast.error {
+    background: var(--danger);
+}
+
+@media (max-width: 720px) {
+    .toast {
+        bottom: auto;
+        top: 12px;
+    }
+
+    /* Clear the floating "Tasks" button and keep most of the map visible */
+    .action-bar {
+        left: 12px;
+        right: 12px;
+        bottom: 76px;
+    }
+
+    .action-buttons {
+        justify-content: space-between;
+    }
+
+    .action {
+        min-width: 0;
+        flex: 1;
+        padding: 6px 4px;
+    }
+
+    .action-label {
+        font-size: 0.68rem;
+    }
+
+    .province-info {
+        max-height: 38%;
+        font-size: 0.9rem;
+    }
+}
+
+/* ---------- Battle popup ---------- */
+
+.modal.battle {
+    width: min(560px, calc(100vw - 32px));
+}
+
+.modal-body {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 18px 20px;
+}
+
+.modal-body h2 {
+    margin: 0;
+    font-size: 1.2rem;
+}
+
+.battle-terrain {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.battle-sides {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.battle-side {
+    padding: 10px 12px;
+    border: 1px solid #c3cad3;
+    border-radius: 6px;
+    font-size: 0.85rem;
+}
+
+.battle-side h3 {
+    margin: 0 0 6px;
+    font-size: 0.95rem;
+}
+
+.battle-side ul {
+    margin: 0;
+    padding-left: 16px;
+}
+
+.battle-side li + li {
+    margin-top: 4px;
+}
+
+.battle-empty {
+    margin: 0;
+    color: var(--text-muted);
+}
+
+.battle-power {
+    margin: 8px 0 0;
+    font-weight: 700;
+}
+
+.battle-power small {
+    font-weight: 400;
+    color: var(--text-muted);
+}
+
+.battle-odds {
+    padding: 10px;
+    border-radius: 6px;
+    text-align: center;
+    font-size: 0.95rem;
+}
+
+.battle-odds strong {
+    font-size: 1.6rem;
+}
+
+.battle-odds.good {
+    background: #e3efdc;
+    color: var(--success);
+}
+
+.battle-odds.even {
+    background: var(--warning-bg);
+    color: var(--warning);
+}
+
+.battle-odds.bad {
+    background: var(--danger-bg);
+    color: var(--danger);
+}
+
+.battle-note {
+    margin: 0;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.battle-result {
+    margin: 0;
+    padding: 10px 12px;
+    border-radius: 6px;
+    font-weight: 700;
+}
+
+.battle-result.won {
+    background: #e3efdc;
+    color: var(--success);
+}
+
+.battle-result.lost {
+    background: var(--danger-bg);
+    color: var(--danger);
+}
+
+.battle-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+}
+
+.battle-table th,
+.battle-table td {
+    padding: 5px 6px;
+    border-bottom: 1px solid #e0e4e9;
+    text-align: left;
+}
+
+.battle-table th {
+    font-size: 0.72rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+
+.battle-table tr.destroyed td {
+    color: var(--danger);
+}
+
+.modal-actions button.primary.danger {
+    background: var(--danger);
+    border-color: var(--danger);
+}
+
+.modal-actions button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+@media (max-width: 520px) {
+    .battle-sides {
+        grid-template-columns: 1fr;
+    }
+}
+
+.battle-choices {
+    list-style: none;
+    padding-left: 0 !important;
+}
+
+.battle-choices label {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    cursor: pointer;
+}
+
+.battle-choices input {
+    margin-top: 3px;
+    accent-color: var(--accent);
+}
+
+.battle-choices small {
+    color: var(--text-muted);
+}
+
+/* ---------- Dispatch popup ---------- */
+
+.modal.dispatch {
+    width: min(480px, calc(100vw - 32px));
+}
+
+.dispatch section + section {
+    margin-top: 4px;
+    padding-top: 10px;
+    border-top: 1px solid #e0e4e9;
+}
+
+.dispatch h3 {
+    margin: 0 0 6px;
+    font-size: 0.75rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+
+.dispatch ul {
+    margin: 0;
+    padding-left: 0;
+    list-style: none;
+    font-size: 0.9rem;
+}
+
+.dispatch li + li {
+    margin-top: 4px;
+}
+
+.dispatch small,
+.dispatch-quiet {
+    color: var(--text-muted);
+}
+
+.dispatch p {
+    margin: 6px 0 0;
+    font-size: 0.9rem;
+}
+
+.dispatch .pos {
+    color: var(--success);
+}
+
+.dispatch .neg {
+    color: var(--danger);
+}
+
+.dispatch-total {
+    font-weight: 700;
+}
+
+/* ---------- Day replay (after the dispatch) ---------- */
+
+.attack-arrow {
+    color: var(--arrow-color);
+    pointer-events: none;
+    animation: arrow-in 0.4s ease-out;
+}
+
+/* Attacker's colour with a dark outline, readable over any territory */
+.attack-arrow {
+    filter: drop-shadow(0 0 1px #111) drop-shadow(0 0 1px #111) drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5));
+}
+
+.attack-arrow line {
+    stroke: currentColor;
+    stroke-width: 4;
+    stroke-linecap: round;
+}
+
+.attack-arrow polygon {
+    fill: currentColor;
+}
+
+@keyframes arrow-in {
+    from {
+        opacity: 0;
+    }
+}
+
+/* Blinks until the next click */
+.province.flash-captured {
+    stroke: #fff;
+    stroke-width: 3;
+    animation: flash-captured 0.9s ease-in-out infinite;
+}
+
+@keyframes flash-captured {
+    50% {
+        filter: brightness(1.7) saturate(1.3);
+    }
+}
+
+.province.flash-held {
+    stroke: #ff5a4e;
+    stroke-width: 3;
+    stroke-dasharray: 5 3;
+}
+
+.province.focus-pulse {
+    stroke: #ffd23f;
+    stroke-width: 5;
+    animation: focus-pulse 0.6s ease-in-out 4;
+}
+
+@keyframes focus-pulse {
+    50% {
+        stroke-width: 9;
+        filter: brightness(1.4);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .attack-arrow,
+    .province.flash-captured,
+    .province.focus-pulse {
+        animation: none;
+    }
+
+    /* No blinking: captured provinces stay lit instead */
+    .province.flash-captured {
+        filter: brightness(1.3);
+    }
+}
+
+/* Province names in the dispatch: links to the map */
+.dispatch .place {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    text-decoration: underline;
+    text-decoration-style: dotted;
+    text-underline-offset: 2px;
+    cursor: pointer;
+}
+
+.dispatch .place:hover,
+.dispatch .place:focus-visible {
+    color: var(--accent);
+    text-decoration-style: solid;
 }

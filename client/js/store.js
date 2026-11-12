@@ -1,8 +1,8 @@
 /**
  * @file Current game state with subscribe/notify.
  *
- * Tasks and the points ledger are saved in localStorage for now; the
- * campaign API replaces this once accounts exist.
+ * Tasks, the points ledger and the campaign (units) are saved in
+ * localStorage for now; the campaign API replaces this once accounts exist.
  *
  * Test sessions: `?session=<name>` keeps its data under separate keys, so
  * the real data is never touched. The "demo" session is filled with
@@ -19,11 +19,13 @@ export const session = params.get('session')?.replace(/[^\w-]/g, '') || null;
 const prefix = session ? `warmind.session.${session}.` : 'warmind.';
 const TASKS_KEY = `${prefix}tasks.v1`;
 const LEDGER_KEY = `${prefix}ledger.v1`;
+const CAMPAIGN_KEY = `${prefix}campaign.v1`;
 
 if (session && params.has('reset')) {
     try {
         localStorage.removeItem(TASKS_KEY);
         localStorage.removeItem(LEDGER_KEY);
+        localStorage.removeItem(CAMPAIGN_KEY);
     } catch {
         // Nothing stored anyway
     }
@@ -85,17 +87,28 @@ function loadLedger() {
     return ledger && typeof ledger.balance === 'number' ? ledger : { balance: 0, settledThrough: null };
 }
 
+/**
+ * Units of the current map, or null: main.js deploys new ones when there is
+ * none yet or they belong to another map seed.
+ * @returns {import('/engine/units.js').Campaign|null}
+ */
+function loadCampaign() {
+    const campaign = load(CAMPAIGN_KEY, null);
+    return campaign && Array.isArray(campaign.units) ? campaign : null;
+}
+
 function initialState() {
     if (session === 'demo' && load(TASKS_KEY, null) === null) {
-        return generateDemoData({ now: new Date() });
+        return { ...generateDemoData({ now: new Date() }), campaign: null };
     }
-    return { tasks: loadTasks(), ledger: loadLedger() };
+    return { tasks: loadTasks(), ledger: loadLedger(), campaign: loadCampaign() };
 }
 
 export const store = createStore(initialState());
 store.subscribe((s) => {
     save(TASKS_KEY, s.tasks);
     save(LEDGER_KEY, s.ledger);
+    save(CAMPAIGN_KEY, s.campaign);
 });
 
 // Save the generated demo data right away

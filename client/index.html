@@ -79,6 +79,8 @@
       <main class="map-area">
         <div id="map" class="map"></div>
         <aside id="province-info" class="province-info" hidden></aside>
+        <div class="action-bar" id="action-bar" aria-label="Unit actions"></div>
+        <p class="toast" id="toast" role="status" aria-live="polite" hidden></p>
       </main>
     </div>
 
@@ -125,6 +127,24 @@
         <button type="submit" value="save" class="primary">Save</button>
       </div>
     </form>
+  </dialog>
+
+  <dialog class="modal battle" id="battle-dialog" aria-labelledby="battle-dialog-title">
+    <div class="modal-body">
+      <h2 id="battle-dialog-title" data-battle-title>Attack</h2>
+      <div data-battle-body></div>
+      <div class="modal-actions" data-battle-actions></div>
+    </div>
+  </dialog>
+
+  <dialog class="modal dispatch" id="dispatch-dialog" aria-labelledby="dispatch-dialog-title">
+    <div class="modal-body">
+      <h2 id="dispatch-dialog-title">While you were away</h2>
+      <div data-dispatch-body></div>
+      <div class="modal-actions">
+        <button type="button" class="primary" data-dispatch-close>Continue</button>
+      </div>
+    </div>
   </dialog>
 
   <script type="module" src="js/main.js"></script>
