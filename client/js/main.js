@@ -8,6 +8,7 @@
 import { generateMap } from '/engine/mapgen.js';
 import { TERRAINS } from '/engine/config.js';
 import { createMapView } from './ui/map.js';
+import { renderVersion } from './ui/topbar.js';
 
 const seedInput = /** @type {HTMLInputElement} */ (document.getElementById('seed'));
 const modeButton = document.getElementById('mode');
@@ -59,4 +60,5 @@ document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') view.select(null);
 });
 
+renderVersion(document.getElementById('version'));
 load(new URLSearchParams(location.search).get('seed') || 'warmind');

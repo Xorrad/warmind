@@ -5,6 +5,7 @@
 import express from 'express';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { BUILD } from './build.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const app = express();
@@ -16,7 +17,10 @@ app.use('/engine', express.static(path.join(root, 'engine')));
 // Browser-side dependencies (mapped in index.html's import map)
 app.use('/vendor/d3-delaunay', express.static(path.join(root, 'node_modules/d3-delaunay/dist')));
 
+// Build version shown next to the logo
+app.get('/api/build', (req, res) => res.json(BUILD));
+
 const port = Number(process.env.PORT) || 3000;
 app.listen(port, () => {
-    console.log(`WarMind running on http://localhost:${port}`);
+    console.log(`WarMind v${BUILD.version}${BUILD.commit ? ` (${BUILD.commit})` : ''} running on http://localhost:${port}`);
 });
