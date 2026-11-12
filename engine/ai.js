@@ -1,0 +1,3 @@
+/**
+ * @file Enemy faction turns.
+ */
