@@ -143,13 +143,23 @@ export function resolveBattle(campaign, map, attackerIds, provinceId, rng) {
         defensePower = forces.defensePower * rng.range(lo, hi);
         winner = attackPower > defensePower ? 'attacker' : 'defender';
         const ratio = winner === 'attacker' ? attackPower / defensePower : defensePower / attackPower;
-        const loser = { strength: COMBAT.strengthLoss * ratio, sizeShare: COMBAT.loserSizeLoss * ratio, motivation: -COMBAT.motivationLoss };
-        const victor = { strength: COMBAT.strengthLoss / ratio, sizeShare: COMBAT.winnerSizeLoss / ratio, motivation: COMBAT.motivationWin };
+        const loser = {
+            strength: COMBAT.strengthLoss * ratio,
+            sizeShare: COMBAT.loserSizeLoss * ratio,
+            motivation: -COMBAT.motivationLoss,
+        };
+        const victor = {
+            strength: COMBAT.strengthLoss / ratio,
+            sizeShare: COMBAT.winnerSizeLoss / ratio,
+            motivation: COMBAT.motivationWin,
+        };
 
         attackerOutcomes = attackers.map((u) => outcome(u, takeLosses(u, winner === 'attacker' ? victor : loser)));
 
         // Beaten defenders fall back to a neighbouring province of theirs
-        const retreats = map.provinces[provinceId].neighbours.filter((n) => TERRAINS[map.provinces[n].terrain].passable && ownerOf(campaign, map, n) === defenderFaction);
+        const retreats = map.provinces[provinceId].neighbours.filter(
+            (n) => TERRAINS[map.provinces[n].terrain].passable && ownerOf(campaign, map, n) === defenderFaction,
+        );
         for (const d of defenders) {
             const after = takeLosses(d, winner === 'defender' ? victor : loser);
             if (after && winner === 'attacker') {

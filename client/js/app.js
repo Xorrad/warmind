@@ -91,7 +91,9 @@ const setTasks = (fn) => store.update((s) => ({ ...s, tasks: fn(s.tasks) }));
 
 const taskDialog = createTaskDialog(document.getElementById('task-dialog'), (fields, id) => {
     const now = clockNow();
-    setTasks((tasks) => (id ? tasks.map((t) => (t.id === id ? updateTask(t, fields) : t)) : [...tasks, createTask(fields, { id: newId(), now })]));
+    setTasks((tasks) =>
+        id ? tasks.map((t) => (t.id === id ? updateTask(t, fields) : t)) : [...tasks, createTask(fields, { id: newId(), now })],
+    );
 });
 
 const taskCallbacks = {
@@ -120,7 +122,14 @@ function settle() {
     const result = settleDays(ledger, tasks, { provincesOwned: provincesOwned(), now: clockNow() });
     if (result.ledger.settledThrough === ledger.settledThrough) return;
     const before = map;
-    const enemy = campaign && result.granted.length ? playDays(campaign, baseMap, result.granted.map((g) => g.day)) : { campaign, reports: [] };
+    const enemy =
+        campaign && result.granted.length
+            ? playDays(
+                  campaign,
+                  baseMap,
+                  result.granted.map((g) => g.day),
+              )
+            : { campaign, reports: [] };
     // A new day starts: every unit gets its move back
     const today = enemy.campaign && result.granted.length ? refreshMoves(enemy.campaign) : enemy.campaign;
     store.update((s) => ({ ...s, ledger: result.ledger, campaign: today }));
@@ -223,7 +232,6 @@ viewToggle.addEventListener('click', () => {
     viewToggle.setAttribute('aria-expanded', String(open));
     viewToggle.textContent = open ? 'Map' : 'Tasks';
 });
-
 
 document.getElementById('regenerate').addEventListener('click', () => load(seedInput.value.trim() || 'warmind'));
 document.getElementById('random').addEventListener('click', () => load(Math.random().toString(36).slice(2, 8)));

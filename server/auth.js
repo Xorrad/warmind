@@ -102,12 +102,15 @@ export function createAuthRouter(db, options) {
             const { username, password } = req.body ?? {};
             const failed = () => res.status(401).json({ error: 'Wrong username or password.' });
             if (honeypotTripped(req.body)) return failed();
-            if (typeof username !== 'string' || typeof password !== 'string' || username.length > 64 || Buffer.byteLength(password) > 256) return failed();
+            if (typeof username !== 'string' || typeof password !== 'string' || username.length > 64 || Buffer.byteLength(password) > 256)
+                return failed();
             const key = username.toLowerCase();
             const locked = lockout.lockedFor(key);
             if (locked) {
                 res.set('Retry-After', String(locked));
-                return res.status(429).json({ error: `Too many failed attempts on this account. Try again in ${Math.ceil(locked / 60)} min.` });
+                return res
+                    .status(429)
+                    .json({ error: `Too many failed attempts on this account. Try again in ${Math.ceil(locked / 60)} min.` });
             }
             const user = db.findUser(username);
             const ok = await bcrypt.compare(password, user?.passwordHash ?? dummyHash);

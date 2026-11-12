@@ -42,4 +42,3 @@ describe('generateDemoData', () => {
         expect(generateDemoData({ now, seed: 'other' }).tasks).not.toEqual(tasks);
     });
 });
-

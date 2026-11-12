@@ -31,7 +31,10 @@ export default [
         files: ['engine/**/*.js'],
         rules: {
             // Determinism: randomness comes from the seeded rng (engine/rng.js)
-            'no-restricted-properties': ['error', { object: 'Math', property: 'random', message: 'Use the seeded rng from engine/rng.js.' }],
+            'no-restricted-properties': [
+                'error',
+                { object: 'Math', property: 'random', message: 'Use the seeded rng from engine/rng.js.' },
+            ],
         },
     },
     { files: ['client/**/*.js'], languageOptions: { globals: globals.browser } },

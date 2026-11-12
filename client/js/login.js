@@ -77,7 +77,8 @@ function fail(form, message, field) {
 forms.login.addEventListener('submit', async (e) => {
     e.preventDefault();
     const f = forms.login.elements;
-    if (!f.username.value.trim() || !f.password.value) return fail(forms.login, 'Enter your username and password.', f.username.value.trim() ? 'password' : 'username');
+    if (!f.username.value.trim() || !f.password.value)
+        return fail(forms.login, 'Enter your username and password.', f.username.value.trim() ? 'password' : 'username');
     fail(forms.login, '');
     setBusy(forms.login, true, 'Logging in…');
     try {
@@ -94,7 +95,8 @@ forms.register.addEventListener('submit', async (e) => {
     e.preventDefault();
     const f = forms.register.elements;
     const username = f.username.value.trim();
-    if (!/^[A-Za-z0-9_-]{3,24}$/.test(username)) return fail(forms.register, 'Usernames are 3 to 24 letters, digits, "_" or "-".', 'username');
+    if (!/^[A-Za-z0-9_-]{3,24}$/.test(username))
+        return fail(forms.register, 'Usernames are 3 to 24 letters, digits, "_" or "-".', 'username');
     if (f.password.value.length < 8) return fail(forms.register, 'Passwords need at least 8 characters.', 'password');
     if (f.password.value !== f.confirm.value) return fail(forms.register, 'The passwords do not match.', 'confirm');
     fail(forms.register, '');

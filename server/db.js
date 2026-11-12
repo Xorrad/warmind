@@ -37,7 +37,9 @@ export function openDb(file) {
     db.exec(SCHEMA);
 
     const q = {
-        userByKey: db.prepare('SELECT id, username, password_hash AS passwordHash, created_at AS createdAt FROM users WHERE username_key = ?'),
+        userByKey: db.prepare(
+            'SELECT id, username, password_hash AS passwordHash, created_at AS createdAt FROM users WHERE username_key = ?',
+        ),
         userById: db.prepare('SELECT id, username, created_at AS createdAt FROM users WHERE id = ?'),
         insertUser: db.prepare('INSERT INTO users (username, username_key, password_hash) VALUES (?, ?, ?)'),
     };

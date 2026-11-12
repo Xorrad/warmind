@@ -1,0 +1,7 @@
+node_modules/
+docs/
+data/
+coverage/
+package-lock.json
+# Prose: tables and wording are kept as written
+*.md

@@ -27,7 +27,16 @@ const SUBJECTS = [
     'graph theory problem set',
     'security CTF write-up',
 ];
-const CHORES = ['Pay rent', 'Book dentist appointment', 'Renew bus pass', 'Call the bank', 'Back up laptop', 'Clean the flat', 'Buy groceries', 'Return library books'];
+const CHORES = [
+    'Pay rent',
+    'Book dentist appointment',
+    'Renew bus pass',
+    'Call the bank',
+    'Back up laptop',
+    'Clean the flat',
+    'Buy groceries',
+    'Return library books',
+];
 
 /**
  * Daily habits and the shape of their history: `days` back from today,
@@ -64,7 +73,8 @@ export function generateDemoData({ now, seed = 'demo', counts = {} }) {
         d.setHours(rng.int(8, 23), rng.chance(0.5) ? 0 : 30, 0, 0);
         return d;
     };
-    const make = (fields, createdAt) => createTask({ title: title(), severity: rng.int(1, 5), recurring: false, ...fields }, { id: id(), now: createdAt });
+    const make = (fields, createdAt) =>
+        createTask({ title: title(), severity: rng.int(1, 5), recurring: false, ...fields }, { id: id(), now: createdAt });
 
     // Open tasks: a few overdue, some due today and tomorrow, most later on
     const spread = [
@@ -97,7 +107,10 @@ export function generateDemoData({ now, seed = 'demo', counts = {} }) {
         if (habit.yesterday === false) doneOn = doneOn.filter((d) => d !== shiftDay(today, -1));
         if (habit.today) doneOn.push(today);
         const created = new Date(now.getTime() - (Math.max(habit.days, 7) + 1) * DAY);
-        tasks.push({ ...createTask({ title: habit.title, severity: habit.severity, recurring: true }, { id: id(), now: created }), doneOn });
+        tasks.push({
+            ...createTask({ title: habit.title, severity: habit.severity, recurring: true }, { id: id(), now: created }),
+            doneOn,
+        });
     }
 
     // Completed history over the last ~6 months, about 15% finished late

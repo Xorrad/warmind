@@ -8,7 +8,13 @@ const map = generateMap({ seed: 'demo' });
 const player = map.factions.find((f) => f.isPlayer);
 const passable = (id) => TERRAINS[map.provinces[id].terrain].passable;
 /** An enemy faction that borders the player. */
-const enemy = map.factions.find((f) => !f.isPlayer && map.provinces.some((p) => p.owner === f.id && passable(p.id) && p.neighbours.some((n) => map.provinces[n].owner === player.id && passable(n))));
+const enemy = map.factions.find(
+    (f) =>
+        !f.isPlayer &&
+        map.provinces.some(
+            (p) => p.owner === f.id && passable(p.id) && p.neighbours.some((n) => map.provinces[n].owner === player.id && passable(n)),
+        ),
+);
 const base = deployUnits(map);
 
 /** A campaign holding only the given units, with an AI budget. */
@@ -39,7 +45,13 @@ describe('playFaction', () => {
         // Every other neighbour belongs to the AI: the player province is the only target
         const owners = [...base.owners];
         for (const n of map.provinces[from].neighbours) if (n !== target && owners[n] >= 0) owners[n] = enemy.id;
-        const c = { ...only([unit({ id: 1, province: from, size: 8, strength: 100, motivation: 1 }), unit({ id: 2, faction: player.id, province: target, size: 1, strength: 40 })]), owners };
+        const c = {
+            ...only([
+                unit({ id: 1, province: from, size: 8, strength: 100, motivation: 1 }),
+                unit({ id: 2, faction: player.id, province: target, size: 1, strength: 40 }),
+            ]),
+            owners,
+        };
         const { campaign, actions } = playFaction(c, map, enemy.id);
         expect(actions[0]).toMatchObject({ type: 'attack', to: target, unitIds: [1] });
         expect(ownerOf(campaign, map, target)).toBe(enemy.id);
@@ -48,14 +60,23 @@ describe('playFaction', () => {
     it('does not attack against bad odds', () => {
         const { from, target } = border();
         // Keep the unit on the front with a strong player unit opposite: no move, no attack
-        const c = only([unit({ id: 1, province: from, size: 1, strength: 80 }), unit({ id: 2, faction: player.id, province: target, size: 10, strength: 100, motivation: 1 })]);
+        const c = only([
+            unit({ id: 1, province: from, size: 1, strength: 80 }),
+            unit({ id: 2, faction: player.id, province: target, size: 10, strength: 100, motivation: 1 }),
+        ]);
         const { actions } = playFaction(c, map, enemy.id);
         expect(actions.some((a) => a.type === 'attack' && a.to === target)).toBe(false);
     });
 
     it('resupplies a weak front unit when it cannot attack', () => {
         const { from, target } = border();
-        const c = only([unit({ id: 1, province: from, size: 1, strength: 20 }), unit({ id: 2, faction: player.id, province: target, size: 10, strength: 100, motivation: 1 })], 2);
+        const c = only(
+            [
+                unit({ id: 1, province: from, size: 1, strength: 20 }),
+                unit({ id: 2, faction: player.id, province: target, size: 10, strength: 100, motivation: 1 }),
+            ],
+            2,
+        );
         const { campaign, actions } = playFaction(c, map, enemy.id);
         expect(actions).toEqual([{ type: 'strengthen', unitId: 1 }]);
         expect(campaign.units.find((u) => u.id === 1).strength).toBeGreaterThan(20);
@@ -63,7 +84,8 @@ describe('playFaction', () => {
     });
 
     it('moves an interior unit one step towards the front', () => {
-        const front = (id) => map.provinces[id].neighbours.some((n) => TERRAINS[map.provinces[n].terrain].passable && map.provinces[n].owner !== enemy.id);
+        const front = (id) =>
+            map.provinces[id].neighbours.some((n) => TERRAINS[map.provinces[n].terrain].passable && map.provinces[n].owner !== enemy.id);
         const inner = map.provinces.find((p) => p.owner === enemy.id && TERRAINS[p.terrain].passable && !front(p.id));
         const c = only([unit({ id: 1, province: inner.id })], 1);
         const { campaign, actions } = playFaction(c, map, enemy.id);
@@ -97,7 +119,8 @@ describe('playDay', () => {
         const before = new Map(base.units.filter((u) => u.faction === player.id).map((u) => [u.id, u]));
         for (const u of campaign.units.filter((x) => x.faction === player.id)) {
             const was = before.get(u.id);
-            if (u.province !== was.province) expect(reports.some((r) => r.defenders.some((d) => d.id === u.id && d.retreatedTo === u.province))).toBe(true);
+            if (u.province !== was.province)
+                expect(reports.some((r) => r.defenders.some((d) => d.id === u.id && d.retreatedTo === u.province))).toBe(true);
         }
     });
 

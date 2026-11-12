@@ -31,7 +31,9 @@ export function aiIncome(campaign, map, faction) {
 
 /** Whether a province of the faction touches another faction's land. */
 function isFront(campaign, map, faction, provinceId) {
-    return map.provinces[provinceId].neighbours.some((n) => TERRAINS[map.provinces[n].terrain].passable && ownerOf(campaign, map, n) !== faction);
+    return map.provinces[provinceId].neighbours.some(
+        (n) => TERRAINS[map.provinces[n].terrain].passable && ownerOf(campaign, map, n) !== faction,
+    );
 }
 
 /**

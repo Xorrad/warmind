@@ -112,7 +112,14 @@ export function createMapView(container, { onSelect, onUnitClick } = {}) {
             const [cx, cy] = [p.center[0], p.center[1] + (p.isCapital ? 18 : 0)];
             here.forEach((u, i) => {
                 const x = cx + (i - (here.length - 1) / 2) * 30;
-                const classes = ['unit', selectedIds.includes(u.id) && 'selected', candidates.includes(u.id) && 'candidate', !movesLeft(u) && 'spent'].filter(Boolean).join(' ');
+                const classes = [
+                    'unit',
+                    selectedIds.includes(u.id) && 'selected',
+                    candidates.includes(u.id) && 'candidate',
+                    !movesLeft(u) && 'spent',
+                ]
+                    .filter(Boolean)
+                    .join(' ');
                 const g = el('g', { class: classes, transform: `translate(${x},${cy})`, 'data-unit-id': u.id });
                 const title = el('title');
                 title.textContent = `${u.name} (${map.factions[u.faction].name}): ${u.size} battalions, strength ${u.strength}%${movesLeft(u) ? '' : ', already moved today'}`;
@@ -231,7 +238,20 @@ export function createMapView(container, { onSelect, onUnitClick } = {}) {
         onSelect?.(province);
     }
 
-    return { render, renderUnits, showTargets, highlight, clearHighlight, focus, recolor, setMode, select, get selectedId() { return selectedId; } };
+    return {
+        render,
+        renderUnits,
+        showTargets,
+        highlight,
+        clearHighlight,
+        focus,
+        recolor,
+        setMode,
+        select,
+        get selectedId() {
+            return selectedId;
+        },
+    };
 }
 
 /** Create an SVG element with attributes. */

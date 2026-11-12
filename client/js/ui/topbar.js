@@ -73,7 +73,8 @@ const fmt = (n) => (Number.isInteger(n) ? String(n) : n.toFixed(1));
 function popover(balance, estimate, { tasks, provincesOwned, completedToday }) {
     const byId = new Map(tasks.map((t) => [t.id, t]));
     const penalized = estimate.overdue.length > 0;
-    const row = (label, value, cls = '') => h('div', { class: `pp-row ${cls}` }, h('span', {}, label), h('span', { class: 'pp-value' }, value));
+    const row = (label, value, cls = '') =>
+        h('div', { class: `pp-row ${cls}` }, h('span', {}, label), h('span', { class: 'pp-value' }, value));
 
     const heaviest = [...estimate.penalties]
         .filter((p) => p.amount >= 0.05 && !estimate.overdue.includes(p.taskId))
@@ -84,13 +85,19 @@ function popover(balance, estimate, { tasks, provincesOwned, completedToday }) {
         h('div', { class: 'pp-balance' }, h('strong', {}, String(balance)), ' AP available'),
         h('div', { class: 'pp-section' }, 'Estimated gain at midnight'),
         row(`Faction size (${provincesOwned} provinces)`, `+${fmt(estimate.base)}`),
-        row(`${estimate.penalties.length} unfinished task${estimate.penalties.length === 1 ? '' : 's'}`, `−${fmt(estimate.penalty)}`, estimate.penalty ? 'neg' : ''),
+        row(
+            `${estimate.penalties.length} unfinished task${estimate.penalties.length === 1 ? '' : 's'}`,
+            `−${fmt(estimate.penalty)}`,
+            estimate.penalty ? 'neg' : '',
+        ),
         estimate.capped &&
-            h('div', { class: 'pp-cap' }, `Capped at ${Math.round(POINTS.maxPenaltyShare * 100)}% of the faction size (−${fmt(estimate.rawPenalty)} without it), shared between all tasks.`),
+            h(
+                'div',
+                { class: 'pp-cap' },
+                `Capped at ${Math.round(POINTS.maxPenaltyShare * 100)}% of the faction size (−${fmt(estimate.rawPenalty)} without it), shared between all tasks.`,
+            ),
         row(`${completedToday} completed today`, `+${estimate.bonus}`, estimate.bonus ? 'pos' : ''),
-        penalized
-            ? row('Overdue task: whole day lost', '0', 'total neg')
-            : row('Total', `+${estimate.total}`, 'total'),
+        penalized ? row('Overdue task: whole day lost', '0', 'total neg') : row('Total', `+${estimate.total}`, 'total'),
         penalized &&
             h(
                 'div',

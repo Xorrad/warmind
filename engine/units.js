@@ -57,7 +57,9 @@ export function ownedMap(map, campaign) {
     if (!campaign?.owners) return map;
     return {
         ...map,
-        provinces: map.provinces.map((p) => (campaign.owners[p.id] === p.owner || campaign.owners[p.id] === undefined ? p : { ...p, owner: campaign.owners[p.id] })),
+        provinces: map.provinces.map((p) =>
+            campaign.owners[p.id] === p.owner || campaign.owners[p.id] === undefined ? p : { ...p, owner: campaign.owners[p.id] },
+        ),
     };
 }
 
@@ -102,7 +104,13 @@ export function deployUnits(map) {
 
     for (const faction of map.factions) {
         const owned = map.provinces.filter((p) => p.owner === faction.id);
-        const fields = (province, size) => ({ faction: faction.id, province, size, strength: start.strength, motivation: start.motivation });
+        const fields = (province, size) => ({
+            faction: faction.id,
+            province,
+            size,
+            strength: start.strength,
+            motivation: start.motivation,
+        });
         campaign = addUnit(campaign, fields(faction.capital, start.capitalSize)).campaign;
 
         const isFront = (p) => p.neighbours.some((n) => map.provinces[n].owner !== faction.id);
@@ -141,7 +149,13 @@ export function mergeUnits(a, b) {
     const size = a.size + b.size;
     const weighted = (key) => (a[key] * a.size + b[key] * b.size) / size;
     const movesUsed = Math.max(a.movesUsed ?? 0, b.movesUsed ?? 0);
-    return { ...a, size, strength: Math.round(weighted('strength')), motivation: Math.round(weighted('motivation') * 100) / 100, ...(movesUsed ? { movesUsed } : {}) };
+    return {
+        ...a,
+        size,
+        strength: Math.round(weighted('strength')),
+        motivation: Math.round(weighted('motivation') * 100) / 100,
+        ...(movesUsed ? { movesUsed } : {}),
+    };
 }
 
 /**

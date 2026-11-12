@@ -119,7 +119,12 @@ export function createChallenges({ secret, bits, minAgeMs, maxAgeMs }) {
 
     return {
         issue() {
-            const c = { id: crypto.randomBytes(16).toString('hex'), salt: crypto.randomBytes(16).toString('hex'), bits, issued: Date.now() };
+            const c = {
+                id: crypto.randomBytes(16).toString('hex'),
+                salt: crypto.randomBytes(16).toString('hex'),
+                bits,
+                issued: Date.now(),
+            };
             return { ...c, sig: sign(c) };
         },
         /**
@@ -132,7 +137,12 @@ export function createChallenges({ secret, bits, minAgeMs, maxAgeMs }) {
             const { id, salt, issued, sig } = challenge;
             const c = { id: String(id), salt: String(salt), bits: Number(challenge.bits), issued: Number(issued) };
             const expected = sign(c);
-            if (typeof sig !== 'string' || sig.length !== expected.length || !crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expected))) return 'bad signature';
+            if (
+                typeof sig !== 'string' ||
+                sig.length !== expected.length ||
+                !crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expected))
+            )
+                return 'bad signature';
             if (c.bits < bits) return 'too easy';
             const age = Date.now() - c.issued;
             if (age < minAgeMs) return 'too fast';

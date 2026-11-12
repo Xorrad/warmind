@@ -170,7 +170,32 @@ export const FACTIONS = [
 
 /** Syllables for generated province names. */
 export const NAME_PARTS = {
-    start: ['Al', 'Bel', 'Cor', 'Dra', 'El', 'Fen', 'Gar', 'Hal', 'Ist', 'Kar', 'Lor', 'Mar', 'Nor', 'Ost', 'Pra', 'Rav', 'Sal', 'Tor', 'Val', 'Zar', 'Brest', 'Vel', 'Kos', 'Lin'],
+    start: [
+        'Al',
+        'Bel',
+        'Cor',
+        'Dra',
+        'El',
+        'Fen',
+        'Gar',
+        'Hal',
+        'Ist',
+        'Kar',
+        'Lor',
+        'Mar',
+        'Nor',
+        'Ost',
+        'Pra',
+        'Rav',
+        'Sal',
+        'Tor',
+        'Val',
+        'Zar',
+        'Brest',
+        'Vel',
+        'Kos',
+        'Lin',
+    ],
     middle: ['', '', 'a', 'e', 'i', 'o', 'an', 'en', 'or', 'ar', 'el'],
     end: ['burg', 'grad', 'ia', 'mont', 'dor', 'heim', 'ova', 'stad', 'ford', 'lin', 'mir', 'vik', 'port', 'is', 'avia', 'enza'],
 };

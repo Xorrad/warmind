@@ -1,159 +1,232 @@
 <!doctype html>
 <html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>WarMind</title>
-  <link rel="stylesheet" href="css/base.css">
-  <link rel="stylesheet" href="css/layout.css">
-  <link rel="stylesheet" href="css/components.css">
-  <script type="importmap">
-    { "imports": { "d3-delaunay": "/vendor/d3-delaunay/d3-delaunay.mjs" } }
-  </script>
-</head>
-<body>
-  <div class="app" id="app">
-    <header class="topbar">
-      <div class="brand">
-        <span class="brand-title">WARMIND</span>
-        <small class="brand-version" id="version"></small>
-      </div>
-      <span class="topbar-divider" aria-hidden="true"></span>
-      <div class="points" id="points" tabindex="0" aria-describedby="points-details">
-        <strong data-points-balance>–</strong>
-        <span class="points-unit">AP</span>
-        <small class="points-gain" data-points-gain></small>
-        <div class="points-popover" id="points-details" role="tooltip"></div>
-      </div>
-      <!-- Map prototype controls (temporary, will move to settings) -->
-      <div class="session-badge" id="session-badge" hidden>
-        <span>Test session <strong data-session-name></strong></span>
-        <span class="session-date" data-session-date></span>
-        <button type="button" class="session-skip" data-session-skip title="Move the clock forward one day: the day is settled and the enemies play">Skip day ⏭</button>
-        <a data-session-reset href="#">Reset</a>
-        <a data-session-exit href="#">Exit</a>
-      </div>
-      <span class="topbar-divider push" aria-hidden="true"></span>
-      <div class="dev-controls">
-        <label>Seed <input id="seed" type="text" spellcheck="false"></label>
-        <button id="regenerate" type="button">Regenerate</button>
-        <button id="random" type="button">Random</button>
-        <button id="mode" type="button">Terrain view</button>
-      </div>
-      <span class="topbar-divider" aria-hidden="true"></span>
-      <div class="user-menu">
-        <span class="user-name" data-user-name></span>
-        <button type="button" class="logout" data-logout>Log out</button>
-      </div>
-    </header>
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>WarMind</title>
+        <link rel="stylesheet" href="css/base.css" />
+        <link rel="stylesheet" href="css/layout.css" />
+        <link rel="stylesheet" href="css/components.css" />
+        <script type="importmap">
+            { "imports": { "d3-delaunay": "/vendor/d3-delaunay/d3-delaunay.mjs" } }
+        </script>
+    </head>
+    <body>
+        <div class="app" id="app">
+            <header class="topbar">
+                <div class="brand">
+                    <span class="brand-title">WARMIND</span>
+                    <small class="brand-version" id="version"></small>
+                </div>
+                <span class="topbar-divider" aria-hidden="true"></span>
+                <div class="points" id="points" tabindex="0" aria-describedby="points-details">
+                    <strong data-points-balance>–</strong>
+                    <span class="points-unit">AP</span>
+                    <small class="points-gain" data-points-gain></small>
+                    <div class="points-popover" id="points-details" role="tooltip"></div>
+                </div>
+                <!-- Map prototype controls (temporary, will move to settings) -->
+                <div class="session-badge" id="session-badge" hidden>
+                    <span>Test session <strong data-session-name></strong></span>
+                    <span class="session-date" data-session-date></span>
+                    <button
+                        type="button"
+                        class="session-skip"
+                        data-session-skip
+                        title="Move the clock forward one day: the day is settled and the enemies play"
+                    >
+                        Skip day ⏭
+                    </button>
+                    <a data-session-reset href="#">Reset</a>
+                    <a data-session-exit href="#">Exit</a>
+                </div>
+                <span class="topbar-divider push" aria-hidden="true"></span>
+                <div class="dev-controls">
+                    <label>Seed <input id="seed" type="text" spellcheck="false" /></label>
+                    <button id="regenerate" type="button">Regenerate</button>
+                    <button id="random" type="button">Random</button>
+                    <button id="mode" type="button">Terrain view</button>
+                </div>
+                <span class="topbar-divider" aria-hidden="true"></span>
+                <div class="user-menu">
+                    <span class="user-name" data-user-name></span>
+                    <button type="button" class="logout" data-logout>Log out</button>
+                </div>
+            </header>
 
-    <div class="body">
-      <aside class="sidebar" id="sidebar" aria-label="Tasks">
-        <section class="panel panel-todo">
-          <header class="panel-head">
-            <h2>Todo list <span class="count" data-count="todo">0</span></h2>
-            <div class="panel-actions">
-              <button type="button" class="add" data-add="once" aria-label="Add a task">+ Task</button>
-              <button type="button" class="icon-btn" data-panel-maximize="todo" aria-pressed="false" aria-label="Maximize Todo list" title="Maximize"><svg viewBox="0 0 16 16" aria-hidden="true"><path class="icon-max" d="M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4"/><path class="icon-restore" d="M6 2v4H2M14 6h-4V2M10 14v-4h4M2 10h4v4"/></svg></button>
-              <button type="button" class="icon-btn panel-collapse" data-panel-collapse="todo" aria-controls="todo-list" aria-expanded="true" aria-label="Collapse Todo list" title="Collapse"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6l4 4 4-4"/></svg></button>
+            <div class="body">
+                <aside class="sidebar" id="sidebar" aria-label="Tasks">
+                    <section class="panel panel-todo">
+                        <header class="panel-head">
+                            <h2>Todo list <span class="count" data-count="todo">0</span></h2>
+                            <div class="panel-actions">
+                                <button type="button" class="add" data-add="once" aria-label="Add a task">+ Task</button>
+                                <button
+                                    type="button"
+                                    class="icon-btn"
+                                    data-panel-maximize="todo"
+                                    aria-pressed="false"
+                                    aria-label="Maximize Todo list"
+                                    title="Maximize"
+                                >
+                                    <svg viewBox="0 0 16 16" aria-hidden="true">
+                                        <path class="icon-max" d="M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4" />
+                                        <path class="icon-restore" d="M6 2v4H2M14 6h-4V2M10 14v-4h4M2 10h4v4" />
+                                    </svg>
+                                </button>
+                                <button
+                                    type="button"
+                                    class="icon-btn panel-collapse"
+                                    data-panel-collapse="todo"
+                                    aria-controls="todo-list"
+                                    aria-expanded="true"
+                                    aria-label="Collapse Todo list"
+                                    title="Collapse"
+                                >
+                                    <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6l4 4 4-4" /></svg>
+                                </button>
+                            </div>
+                        </header>
+                        <ul class="task-list" id="todo-list"></ul>
+                    </section>
+                    <section class="panel panel-streaks">
+                        <header class="panel-head">
+                            <h2>Streaks <span class="count" data-count="streaks">0</span></h2>
+                            <div class="panel-actions">
+                                <button type="button" class="add" data-add="daily" aria-label="Add a daily task">+ Daily</button>
+                                <button
+                                    type="button"
+                                    class="icon-btn"
+                                    data-panel-maximize="streaks"
+                                    aria-pressed="false"
+                                    aria-label="Maximize Streaks"
+                                    title="Maximize"
+                                >
+                                    <svg viewBox="0 0 16 16" aria-hidden="true">
+                                        <path class="icon-max" d="M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4" />
+                                        <path class="icon-restore" d="M6 2v4H2M14 6h-4V2M10 14v-4h4M2 10h4v4" />
+                                    </svg>
+                                </button>
+                                <button
+                                    type="button"
+                                    class="icon-btn panel-collapse"
+                                    data-panel-collapse="streaks"
+                                    aria-controls="streak-list"
+                                    aria-expanded="true"
+                                    aria-label="Collapse Streaks"
+                                    title="Collapse"
+                                >
+                                    <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6l4 4 4-4" /></svg>
+                                </button>
+                            </div>
+                        </header>
+                        <ul class="task-list" id="streak-list"></ul>
+                    </section>
+                    <section class="panel panel-completed">
+                        <header class="panel-head">
+                            <h2>Completed <span class="count" data-count="completed">0</span></h2>
+                            <div class="panel-actions">
+                                <button
+                                    type="button"
+                                    class="icon-btn"
+                                    data-panel-maximize="completed"
+                                    aria-pressed="false"
+                                    aria-label="Maximize Completed"
+                                    title="Maximize"
+                                >
+                                    <svg viewBox="0 0 16 16" aria-hidden="true">
+                                        <path class="icon-max" d="M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4" />
+                                        <path class="icon-restore" d="M6 2v4H2M14 6h-4V2M10 14v-4h4M2 10h4v4" />
+                                    </svg>
+                                </button>
+                                <button
+                                    type="button"
+                                    class="icon-btn panel-collapse"
+                                    data-panel-collapse="completed"
+                                    aria-controls="completed-list"
+                                    aria-expanded="true"
+                                    aria-label="Collapse Completed"
+                                    title="Collapse"
+                                >
+                                    <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6l4 4 4-4" /></svg>
+                                </button>
+                            </div>
+                        </header>
+                        <ul class="task-list" id="completed-list"></ul>
+                    </section>
+                </aside>
+
+                <main class="map-area">
+                    <div id="map" class="map"></div>
+                    <aside id="province-info" class="province-info" hidden></aside>
+                    <div class="action-bar" id="action-bar" aria-label="Unit actions"></div>
+                    <p class="toast" id="toast" role="status" aria-live="polite" hidden></p>
+                </main>
             </div>
-          </header>
-          <ul class="task-list" id="todo-list"></ul>
-        </section>
-        <section class="panel panel-streaks">
-          <header class="panel-head">
-            <h2>Streaks <span class="count" data-count="streaks">0</span></h2>
-            <div class="panel-actions">
-              <button type="button" class="add" data-add="daily" aria-label="Add a daily task">+ Daily</button>
-              <button type="button" class="icon-btn" data-panel-maximize="streaks" aria-pressed="false" aria-label="Maximize Streaks" title="Maximize"><svg viewBox="0 0 16 16" aria-hidden="true"><path class="icon-max" d="M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4"/><path class="icon-restore" d="M6 2v4H2M14 6h-4V2M10 14v-4h4M2 10h4v4"/></svg></button>
-              <button type="button" class="icon-btn panel-collapse" data-panel-collapse="streaks" aria-controls="streak-list" aria-expanded="true" aria-label="Collapse Streaks" title="Collapse"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6l4 4 4-4"/></svg></button>
-            </div>
-          </header>
-          <ul class="task-list" id="streak-list"></ul>
-        </section>
-        <section class="panel panel-completed">
-          <header class="panel-head">
-            <h2>Completed <span class="count" data-count="completed">0</span></h2>
-            <div class="panel-actions">
-              <button type="button" class="icon-btn" data-panel-maximize="completed" aria-pressed="false" aria-label="Maximize Completed" title="Maximize"><svg viewBox="0 0 16 16" aria-hidden="true"><path class="icon-max" d="M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4"/><path class="icon-restore" d="M6 2v4H2M14 6h-4V2M10 14v-4h4M2 10h4v4"/></svg></button>
-              <button type="button" class="icon-btn panel-collapse" data-panel-collapse="completed" aria-controls="completed-list" aria-expanded="true" aria-label="Collapse Completed" title="Collapse"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6l4 4 4-4"/></svg></button>
-            </div>
-          </header>
-          <ul class="task-list" id="completed-list"></ul>
-        </section>
-      </aside>
 
-      <main class="map-area">
-        <div id="map" class="map"></div>
-        <aside id="province-info" class="province-info" hidden></aside>
-        <div class="action-bar" id="action-bar" aria-label="Unit actions"></div>
-        <p class="toast" id="toast" role="status" aria-live="polite" hidden></p>
-      </main>
-    </div>
-
-    <!-- Mobile only: switch between the map and the task panels -->
-    <button type="button" class="view-toggle" id="view-toggle" aria-controls="sidebar" aria-expanded="false">Tasks</button>
-  </div>
-
-  <dialog class="modal" id="task-dialog" aria-labelledby="task-dialog-title">
-    <form method="dialog" novalidate>
-      <h2 id="task-dialog-title" data-heading>New task</h2>
-
-      <label class="field">
-        <span>Title</span>
-        <input name="title" type="text" maxlength="120" autocomplete="off" placeholder="Finish the IHM report">
-        <small class="error" data-error="title"></small>
-      </label>
-
-      <fieldset class="field segmented">
-        <legend>Kind</legend>
-        <label><input type="radio" name="kind" value="once" checked> One-off</label>
-        <label><input type="radio" name="kind" value="daily"> Every day</label>
-      </fieldset>
-
-      <div class="field" data-due-row>
-        <label for="task-due">Due</label>
-        <input id="task-due" name="dueAt" type="datetime-local">
-        <div class="shortcuts" role="group" aria-label="Push the due date back">
-          <button type="button" data-add-days="1">+1 day</button>
-          <button type="button" data-add-days="7">+1 week</button>
-          <button type="button" data-add-months="1">+1 month</button>
+            <!-- Mobile only: switch between the map and the task panels -->
+            <button type="button" class="view-toggle" id="view-toggle" aria-controls="sidebar" aria-expanded="false">Tasks</button>
         </div>
-        <small class="error" data-error="dueAt"></small>
-      </div>
 
-      <label class="field">
-        <span>Severity <output data-severity-value>3 / 5</output></span>
-        <input name="severity" type="range" min="1" max="5" step="1">
-        <small class="hint">Higher severity costs more points while unfinished.</small>
-        <small class="error" data-error="severity"></small>
-      </label>
+        <dialog class="modal" id="task-dialog" aria-labelledby="task-dialog-title">
+            <form method="dialog" novalidate>
+                <h2 id="task-dialog-title" data-heading>New task</h2>
 
-      <div class="modal-actions">
-        <button type="submit" value="cancel" formnovalidate class="secondary">Cancel</button>
-        <button type="submit" value="save" class="primary">Save</button>
-      </div>
-    </form>
-  </dialog>
+                <label class="field">
+                    <span>Title</span>
+                    <input name="title" type="text" maxlength="120" autocomplete="off" placeholder="Finish the IHM report" />
+                    <small class="error" data-error="title"></small>
+                </label>
 
-  <dialog class="modal battle" id="battle-dialog" aria-labelledby="battle-dialog-title">
-    <div class="modal-body">
-      <h2 id="battle-dialog-title" data-battle-title>Attack</h2>
-      <div data-battle-body></div>
-      <div class="modal-actions" data-battle-actions></div>
-    </div>
-  </dialog>
+                <fieldset class="field segmented">
+                    <legend>Kind</legend>
+                    <label><input type="radio" name="kind" value="once" checked /> One-off</label>
+                    <label><input type="radio" name="kind" value="daily" /> Every day</label>
+                </fieldset>
 
-  <dialog class="modal dispatch" id="dispatch-dialog" aria-labelledby="dispatch-dialog-title">
-    <div class="modal-body">
-      <h2 id="dispatch-dialog-title">While you were away</h2>
-      <div data-dispatch-body></div>
-      <div class="modal-actions">
-        <button type="button" class="primary" data-dispatch-close>Continue</button>
-      </div>
-    </div>
-  </dialog>
+                <div class="field" data-due-row>
+                    <label for="task-due">Due</label>
+                    <input id="task-due" name="dueAt" type="datetime-local" />
+                    <div class="shortcuts" role="group" aria-label="Push the due date back">
+                        <button type="button" data-add-days="1">+1 day</button>
+                        <button type="button" data-add-days="7">+1 week</button>
+                        <button type="button" data-add-months="1">+1 month</button>
+                    </div>
+                    <small class="error" data-error="dueAt"></small>
+                </div>
 
-  <script type="module" src="js/main.js"></script>
-</body>
+                <label class="field">
+                    <span>Severity <output data-severity-value>3 / 5</output></span>
+                    <input name="severity" type="range" min="1" max="5" step="1" />
+                    <small class="hint">Higher severity costs more points while unfinished.</small>
+                    <small class="error" data-error="severity"></small>
+                </label>
+
+                <div class="modal-actions">
+                    <button type="submit" value="cancel" formnovalidate class="secondary">Cancel</button>
+                    <button type="submit" value="save" class="primary">Save</button>
+                </div>
+            </form>
+        </dialog>
+
+        <dialog class="modal battle" id="battle-dialog" aria-labelledby="battle-dialog-title">
+            <div class="modal-body">
+                <h2 id="battle-dialog-title" data-battle-title>Attack</h2>
+                <div data-battle-body></div>
+                <div class="modal-actions" data-battle-actions></div>
+            </div>
+        </dialog>
+
+        <dialog class="modal dispatch" id="dispatch-dialog" aria-labelledby="dispatch-dialog-title">
+            <div class="modal-body">
+                <h2 id="dispatch-dialog-title">While you were away</h2>
+                <div data-dispatch-body></div>
+                <div class="modal-actions">
+                    <button type="button" class="primary" data-dispatch-close>Continue</button>
+                </div>
+            </div>
+        </dialog>
+
+        <script type="module" src="js/main.js"></script>
+    </body>
 </html>

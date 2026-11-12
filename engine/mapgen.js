@@ -138,7 +138,9 @@ export function generateMap(options = {}) {
         const outline = unionOutline(group, cells, edges);
         const centers = group.map((c) => provinces[c].center);
         const mean = [centers.reduce((s, c) => s + c[0], 0) / centers.length, centers.reduce((s, c) => s + c[1], 0) / centers.length];
-        const middle = centers.reduce((best, c) => (Math.hypot(c[0] - mean[0], c[1] - mean[1]) < Math.hypot(best[0] - mean[0], best[1] - mean[1]) ? c : best));
+        const middle = centers.reduce((best, c) =>
+            Math.hypot(c[0] - mean[0], c[1] - mean[1]) < Math.hypot(best[0] - mean[0], best[1] - mean[1]) ? c : best,
+        );
         result.push({
             id: result.length,
             name: seaName(rng, used),
@@ -234,7 +236,8 @@ function buildEdges(cells, sites, o) {
             const b = poly[(i + 1) % poly.length];
             const [ka, kb] = [vertexKey(a), vertexKey(b)];
             const k = ka < kb ? `${ka}|${kb}` : `${kb}|${ka}`;
-            if (!edges.has(k)) edges.set(k, ka < kb ? { a, b, ka, kb, cells: [], inner: [] } : { a: b, b: a, ka: kb, kb: ka, cells: [], inner: [] });
+            if (!edges.has(k))
+                edges.set(k, ka < kb ? { a, b, ka, kb, cells: [], inner: [] } : { a: b, b: a, ka: kb, kb: ka, cells: [], inner: [] });
             edges.get(k).cells.push(id);
         }
     });
@@ -386,7 +389,9 @@ function pickSeas(rng, provinces, elevation, o) {
         }
         // Too-small leftovers join the smallest neighbouring group
         for (const small of bodyGroups.filter((g) => g.length < minCells)) {
-            const touching = bodyGroups.filter((g) => g !== small && g.length && g.some((c) => small.some((s) => seaNeighbours(s).includes(c))));
+            const touching = bodyGroups.filter(
+                (g) => g !== small && g.length && g.some((c) => small.some((s) => seaNeighbours(s).includes(c))),
+            );
             if (!touching.length) continue;
             const into = touching.sort((a, b) => a.length - b.length)[0];
             into.push(...small.splice(0));
@@ -481,7 +486,10 @@ function carveRanges(rng, provinces, edges, elevation, o) {
     for (const e of edges.values()) {
         if (e.cells.length !== 2 || !inside(e.a) || !inside(e.b)) continue;
         if (e.cells.some((c) => provinces[c].terrain === 'sea')) continue;
-        for (const [from, fk, to, tk] of [[e.a, e.ka, e.b, e.kb], [e.b, e.kb, e.a, e.ka]]) {
+        for (const [from, fk, to, tk] of [
+            [e.a, e.ka, e.b, e.kb],
+            [e.b, e.kb, e.a, e.ka],
+        ]) {
             if (!vertices.has(fk)) vertices.set(fk, { point: from, links: [] });
             vertices.get(fk).links.push({ to: tk, point: to, cells: e.cells });
         }
@@ -530,9 +538,15 @@ function carveRanges(rng, provinces, edges, elevation, o) {
         if (steps.length < minEdges) continue;
 
         // Cut adjacency along the chain, undo if the map is no longer connected
-        for (const { cells: [a, b] } of steps) unlink(provinces, a, b);
+        for (const {
+            cells: [a, b],
+        } of steps)
+            unlink(provinces, a, b);
         if (!isConnected(provinces)) {
-            for (const { cells: [a, b] } of steps) link(provinces, a, b);
+            for (const {
+                cells: [a, b],
+            } of steps)
+                link(provinces, a, b);
             continue;
         }
 
@@ -689,24 +703,54 @@ function marchingSquares(field, nx, ny, toPoint) {
         return id;
     };
     const connect = (a, b) => {
-        for (const [from, to] of [[a, b], [b, a]]) {
+        for (const [from, to] of [
+            [a, b],
+            [b, a],
+        ]) {
             if (!links.has(from)) links.set(from, []);
             links.get(from).push(to);
         }
     };
     // Cell sides: 0 top, 1 right, 2 bottom, 3 left
-    const SEGMENTS = { 1: [[3, 0]], 2: [[0, 1]], 3: [[3, 1]], 4: [[1, 2]], 6: [[0, 2]], 7: [[3, 2]], 8: [[2, 3]], 9: [[0, 2]], 11: [[1, 2]], 12: [[1, 3]], 13: [[0, 1]], 14: [[3, 0]] };
+    const SEGMENTS = {
+        1: [[3, 0]],
+        2: [[0, 1]],
+        3: [[3, 1]],
+        4: [[1, 2]],
+        6: [[0, 2]],
+        7: [[3, 2]],
+        8: [[2, 3]],
+        9: [[0, 2]],
+        11: [[1, 2]],
+        12: [[1, 3]],
+        13: [[0, 1]],
+        14: [[3, 0]],
+    };
     for (let gy = 0; gy < ny - 1; gy++) {
         for (let gx = 0; gx < nx - 1; gx++) {
             const v = [value(gx, gy), value(gx + 1, gy), value(gx + 1, gy + 1), value(gx, gy + 1)];
             const code = (v[0] < 0) | ((v[1] < 0) << 1) | ((v[2] < 0) << 2) | ((v[3] < 0) << 3);
             if (code === 0 || code === 15) continue;
-            const side = [() => crossing(gx, gy, 'h'), () => crossing(gx + 1, gy, 'v'), () => crossing(gx, gy + 1, 'h'), () => crossing(gx, gy, 'v')];
+            const side = [
+                () => crossing(gx, gy, 'h'),
+                () => crossing(gx + 1, gy, 'v'),
+                () => crossing(gx, gy + 1, 'h'),
+                () => crossing(gx, gy, 'v'),
+            ];
             let segments = SEGMENTS[code];
             if (code === 5 || code === 10) {
                 // Saddle: the cell centre decides whether the inside corners join
                 const centreInside = (v[0] + v[1] + v[2] + v[3]) / 4 < 0;
-                segments = (code === 5) === centreInside ? [[0, 1], [2, 3]] : [[3, 0], [1, 2]];
+                segments =
+                    (code === 5) === centreInside
+                        ? [
+                              [0, 1],
+                              [2, 3],
+                          ]
+                        : [
+                              [3, 0],
+                              [1, 2],
+                          ];
             }
             for (const [a, b] of segments) connect(side[a](), side[b]());
         }

@@ -25,7 +25,11 @@ async function start(overrides = {}) {
         const request = async (method, path, body, headers = {}) => {
             const res = await fetch(base + path, {
                 method,
-                headers: { ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}), ...(cookie ? { Cookie: cookie } : {}), ...headers },
+                headers: {
+                    ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}),
+                    ...(cookie ? { Cookie: cookie } : {}),
+                    ...headers,
+                },
                 body: body === undefined ? undefined : typeof body === 'string' ? body : JSON.stringify(body),
             });
             const set = res.headers.get('set-cookie');
@@ -132,7 +136,9 @@ describe('auth API', () => {
 
     it('rejects non-JSON posts and malformed JSON', async () => {
         const c = srv.client();
-        expect((await c.post('/api/auth/login', 'username=a&password=b', { 'Content-Type': 'application/x-www-form-urlencoded' })).status).toBe(415);
+        expect(
+            (await c.post('/api/auth/login', 'username=a&password=b', { 'Content-Type': 'application/x-www-form-urlencoded' })).status,
+        ).toBe(415);
         expect((await c.post('/api/auth/login', '{bad json')).status).toBe(400);
     });
 });
@@ -145,7 +151,9 @@ describe('anti-bot', () => {
         srv = await start();
         expect((await register(srv.client(), 'botname', 'long enough pass', { website: 'http://spam' })).status).toBe(400);
         await register(srv.client());
-        expect((await srv.client().post('/api/auth/login', { username: 'general', password: 'correct horse battery', website: 'x' })).status).toBe(401);
+        expect(
+            (await srv.client().post('/api/auth/login', { username: 'general', password: 'correct horse battery', website: 'x' })).status,
+        ).toBe(401);
     });
 
     it('rejects wrong, missing, forged and reused challenges', async () => {
@@ -182,7 +190,8 @@ describe('anti-bot', () => {
         srv = await start({ lockout: { maxFailures: 3, windowMs: 60_000, lockMs: 60_000 } });
         await register(srv.client());
         const c = srv.client();
-        for (let i = 0; i < 3; i++) expect((await c.post('/api/auth/login', { username: 'general', password: 'nope nope nope' })).status).toBe(401);
+        for (let i = 0; i < 3; i++)
+            expect((await c.post('/api/auth/login', { username: 'general', password: 'nope nope nope' })).status).toBe(401);
         const locked = await c.post('/api/auth/login', { username: 'general', password: 'correct horse battery' });
         expect(locked.status).toBe(429);
         expect(Number(locked.headers.get('retry-after'))).toBeGreaterThan(0);
@@ -192,7 +201,8 @@ describe('anti-bot', () => {
         srv = await start({ limits: { ...DEFAULTS.limits, login: { windowMs: 60_000, max: 3 } } });
         const c = srv.client();
         const statuses = [];
-        for (let i = 0; i < 5; i++) statuses.push((await c.post('/api/auth/login', { username: `user${i}`, password: 'whatever pass' })).status);
+        for (let i = 0; i < 5; i++)
+            statuses.push((await c.post('/api/auth/login', { username: `user${i}`, password: 'whatever pass' })).status);
         expect(statuses).toEqual([401, 401, 401, 429, 429]);
     });
 });

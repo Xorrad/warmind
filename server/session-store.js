@@ -16,7 +16,9 @@ export class SqliteSessionStore extends session.Store {
         super();
         this.q = {
             get: db.prepare('SELECT sess, expires FROM sessions WHERE sid = ?'),
-            set: db.prepare('INSERT INTO sessions (sid, sess, expires) VALUES (?, ?, ?) ON CONFLICT(sid) DO UPDATE SET sess = excluded.sess, expires = excluded.expires'),
+            set: db.prepare(
+                'INSERT INTO sessions (sid, sess, expires) VALUES (?, ?, ?) ON CONFLICT(sid) DO UPDATE SET sess = excluded.sess, expires = excluded.expires',
+            ),
             touch: db.prepare('UPDATE sessions SET expires = ? WHERE sid = ?'),
             destroy: db.prepare('DELETE FROM sessions WHERE sid = ?'),
             prune: db.prepare('DELETE FROM sessions WHERE expires < ?'),

@@ -777,7 +777,6 @@
     background: var(--bg);
 }
 
-
 .field input[type='text'],
 .field input[type='datetime-local'],
 .field select {

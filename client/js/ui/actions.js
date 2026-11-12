@@ -43,7 +43,10 @@ export function renderActionBar(el, { unit, label: heading, own, states, mode, h
         return;
     }
     if (!own) {
-        el.replaceChildren(h('div', { class: 'action-unit' }, heading ?? unit.name), h('p', { class: 'action-hint' }, hint ?? 'This unit is not yours.'));
+        el.replaceChildren(
+            h('div', { class: 'action-unit' }, heading ?? unit.name),
+            h('p', { class: 'action-hint' }, hint ?? 'This unit is not yours.'),
+        );
         return;
     }
     const buttons = ACTIONS.map(({ type, label, icon }) => {
@@ -66,6 +69,10 @@ export function renderActionBar(el, { unit, label: heading, own, states, mode, h
             state.cost && h('span', { class: 'action-cost' }, `${state.cost} AP`),
         );
     });
-    const parts = [h('div', { class: 'action-unit' }, heading ?? unit.name), h('div', { class: 'action-buttons' }, ...buttons), hint && h('p', { class: 'action-hint' }, hint)];
+    const parts = [
+        h('div', { class: 'action-unit' }, heading ?? unit.name),
+        h('div', { class: 'action-buttons' }, ...buttons),
+        hint && h('p', { class: 'action-hint' }, hint),
+    ];
     el.replaceChildren(...parts.filter(Boolean));
 }

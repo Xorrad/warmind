@@ -1,62 +1,73 @@
 <!doctype html>
 <html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>WarMind: Log in</title>
-  <link rel="stylesheet" href="css/base.css">
-  <link rel="stylesheet" href="css/auth.css">
-</head>
-<body class="auth-page">
-  <main class="auth-card">
-    <h1 class="auth-brand">WARMIND</h1>
-    <p class="auth-tagline">Lead your faction. Finish your tasks.</p>
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>WarMind: Log in</title>
+        <link rel="stylesheet" href="css/base.css" />
+        <link rel="stylesheet" href="css/auth.css" />
+    </head>
+    <body class="auth-page">
+        <main class="auth-card">
+            <h1 class="auth-brand">WARMIND</h1>
+            <p class="auth-tagline">Lead your faction. Finish your tasks.</p>
 
-    <div class="auth-tabs" role="tablist" aria-label="Account">
-      <button type="button" role="tab" id="tab-login" aria-controls="login-form" aria-selected="true">Log in</button>
-      <button type="button" role="tab" id="tab-register" aria-controls="register-form" aria-selected="false">Create account</button>
-    </div>
+            <div class="auth-tabs" role="tablist" aria-label="Account">
+                <button type="button" role="tab" id="tab-login" aria-controls="login-form" aria-selected="true">Log in</button>
+                <button type="button" role="tab" id="tab-register" aria-controls="register-form" aria-selected="false">
+                    Create account
+                </button>
+            </div>
 
-    <form id="login-form" class="auth-form" role="tabpanel" aria-labelledby="tab-login" novalidate>
-      <label class="field">
-        <span>Username</span>
-        <input name="username" autocomplete="username" required maxlength="24" autocapitalize="none" spellcheck="false">
-      </label>
-      <label class="field">
-        <span>Password</span>
-        <input name="password" type="password" autocomplete="current-password" required>
-      </label>
-      <!-- Honeypot: hidden from people, filled in by bots -->
-      <div class="hp" aria-hidden="true">
-        <label>Website <input name="website" tabindex="-1" autocomplete="off"></label>
-      </div>
-      <p class="auth-error" role="alert" data-error></p>
-      <button type="submit" class="primary">Log in</button>
-    </form>
+            <form id="login-form" class="auth-form" role="tabpanel" aria-labelledby="tab-login" novalidate>
+                <label class="field">
+                    <span>Username</span>
+                    <input name="username" autocomplete="username" required maxlength="24" autocapitalize="none" spellcheck="false" />
+                </label>
+                <label class="field">
+                    <span>Password</span>
+                    <input name="password" type="password" autocomplete="current-password" required />
+                </label>
+                <!-- Honeypot: hidden from people, filled in by bots -->
+                <div class="hp" aria-hidden="true">
+                    <label>Website <input name="website" tabindex="-1" autocomplete="off" /></label>
+                </div>
+                <p class="auth-error" role="alert" data-error></p>
+                <button type="submit" class="primary">Log in</button>
+            </form>
 
-    <form id="register-form" class="auth-form" role="tabpanel" aria-labelledby="tab-register" novalidate hidden>
-      <label class="field">
-        <span>Username</span>
-        <input name="username" autocomplete="username" required minlength="3" maxlength="24" pattern="[A-Za-z0-9_\-]{3,24}" autocapitalize="none" spellcheck="false">
-        <small class="hint">3 to 24 letters, digits, "_" or "-".</small>
-      </label>
-      <label class="field">
-        <span>Password</span>
-        <input name="password" type="password" autocomplete="new-password" required minlength="8">
-        <small class="hint">At least 8 characters; a short sentence is easy to remember.</small>
-      </label>
-      <label class="field">
-        <span>Confirm password</span>
-        <input name="confirm" type="password" autocomplete="new-password" required minlength="8">
-      </label>
-      <div class="hp" aria-hidden="true">
-        <label>Website <input name="website" tabindex="-1" autocomplete="off"></label>
-      </div>
-      <p class="auth-verify" data-verify>Checking your browser…</p>
-      <p class="auth-error" role="alert" data-error></p>
-      <button type="submit" class="primary">Create account</button>
-    </form>
-  </main>
-  <script type="module" src="js/login.js"></script>
-</body>
+            <form id="register-form" class="auth-form" role="tabpanel" aria-labelledby="tab-register" novalidate hidden>
+                <label class="field">
+                    <span>Username</span>
+                    <input
+                        name="username"
+                        autocomplete="username"
+                        required
+                        minlength="3"
+                        maxlength="24"
+                        pattern="[A-Za-z0-9_\-]{3,24}"
+                        autocapitalize="none"
+                        spellcheck="false"
+                    />
+                    <small class="hint">3 to 24 letters, digits, "_" or "-".</small>
+                </label>
+                <label class="field">
+                    <span>Password</span>
+                    <input name="password" type="password" autocomplete="new-password" required minlength="8" />
+                    <small class="hint">At least 8 characters; a short sentence is easy to remember.</small>
+                </label>
+                <label class="field">
+                    <span>Confirm password</span>
+                    <input name="confirm" type="password" autocomplete="new-password" required minlength="8" />
+                </label>
+                <div class="hp" aria-hidden="true">
+                    <label>Website <input name="website" tabindex="-1" autocomplete="off" /></label>
+                </div>
+                <p class="auth-verify" data-verify>Checking your browser…</p>
+                <p class="auth-error" role="alert" data-error></p>
+                <button type="submit" class="primary">Create account</button>
+            </form>
+        </main>
+        <script type="module" src="js/login.js"></script>
+    </body>
 </html>

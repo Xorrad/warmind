@@ -185,7 +185,10 @@ describe('computeDailyPoints as of a past moment', () => {
     const provincesOwned = 10;
 
     it('ignores tasks created later', () => {
-        const future = createTask({ title: 'Later', severity: 5, recurring: false, dueAt: inDays(1) }, { id: 'f', now: new Date(now.getTime() + 3600e3) });
+        const future = createTask(
+            { title: 'Later', severity: 5, recurring: false, dueAt: inDays(1) },
+            { id: 'f', now: new Date(now.getTime() + 3600e3) },
+        );
         expect(computeDailyPoints([future], { provincesOwned, now }).penalty).toBe(0);
     });
 
@@ -216,7 +219,10 @@ describe('settleDays', () => {
     it('judges each day on the tasks as they were at its end', () => {
         // Created on the 9th, due on the 10th at noon, completed today (the 12th)
         const t = {
-            ...createTask({ title: 'Lab', severity: 3, recurring: false, dueAt: new Date(2026, 10, 10, 12).toISOString() }, { id: 'lab', now: new Date(2026, 10, 9, 9) }),
+            ...createTask(
+                { title: 'Lab', severity: 3, recurring: false, dueAt: new Date(2026, 10, 10, 12).toISOString() },
+                { id: 'lab', now: new Date(2026, 10, 9, 9) },
+            ),
             completedAt: now.toISOString(),
         };
         const { granted } = settleDays({ balance: 0, settledThrough: '2026-11-08' }, [t], { provincesOwned, now });

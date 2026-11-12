@@ -111,7 +111,11 @@ export function createGameController({ view, store, getMap, info, actionBar, toa
         const move = !rested
             ? { ok: false, reason: tired }
             : moves.length
-              ? { ok: costs[0] <= balance, cost: costs.length > 1 ? `${costs[0]}–${costs.at(-1)}` : String(costs[0]), reason: `Needs ${costs[0]} AP, you have ${balance}.` }
+              ? {
+                    ok: costs[0] <= balance,
+                    cost: costs.length > 1 ? `${costs[0]}–${costs.at(-1)}` : String(costs[0]),
+                    reason: `Needs ${costs[0]} AP, you have ${balance}.`,
+                }
               : { ok: false, reason: 'No province of yours next to the selection.' };
 
         const attack = !rested
@@ -140,10 +144,13 @@ export function createGameController({ view, store, getMap, info, actionBar, toa
         } else {
             const others = unitsIn(c, primary.province).filter((u) => u.id !== primary.id && u.faction === primary.faction);
             const checks = others.map((o) => check({ type: 'merge', unitId: primary.id, otherId: o.id }));
-            merge = others.length ? (checks.find((m) => m.ok) ?? checks[0]) : { ok: false, reason: 'No other unit of yours in this province.' };
+            merge = others.length
+                ? (checks.find((m) => m.ok) ?? checks[0])
+                : { ok: false, reason: 'No other unit of yours in this province.' };
         }
 
-        const split = units.length > 1 ? { ok: false, reason: 'Select a single unit to split it.' } : check({ type: 'split', unitId: primary.id });
+        const split =
+            units.length > 1 ? { ok: false, reason: 'Select a single unit to split it.' } : check({ type: 'split', unitId: primary.id });
         return { move, attack, strengthen, merge, split };
     }
 
@@ -203,7 +210,11 @@ export function createGameController({ view, store, getMap, info, actionBar, toa
             } else {
                 const r = campaign().log.at(-1);
                 if (r.captured) say(`${target.name} captured (−${cost} AP)`, 'success');
-                else say(`${r.winner === 'attacker' ? `${target.name} held despite the victory` : `Attack on ${target.name} repelled`} (−${cost} AP)`, 'error');
+                else
+                    say(
+                        `${r.winner === 'attacker' ? `${target.name} held despite the victory` : `Attack on ${target.name} repelled`} (−${cost} AP)`,
+                        'error',
+                    );
                 battle.showResult(r, map);
             }
             refresh();
@@ -246,7 +257,12 @@ export function createGameController({ view, store, getMap, info, actionBar, toa
             case 'merge': {
                 if (units.length > 1) {
                     const others = units.filter((u) => u !== primary && u.province === primary.province);
-                    if (runAll(others.map((o) => ({ type, unitId: primary.id, otherId: o.id })), (n) => `${n} unit${n > 1 ? 's' : ''} merged into ${primary.name}`)) {
+                    if (
+                        runAll(
+                            others.map((o) => ({ type, unitId: primary.id, otherId: o.id })),
+                            (n) => `${n} unit${n > 1 ? 's' : ''} merged into ${primary.name}`,
+                        )
+                    ) {
                         selection = [primary.id];
                     }
                     mode = 'orders';
@@ -282,7 +298,8 @@ export function createGameController({ view, store, getMap, info, actionBar, toa
 
         // Second step of a merge: the clicked unit joins the primary one
         if (mode === 'merge' && own.length && id !== own[0].id) {
-            if (runAll([{ type: 'merge', unitId: own[0].id, otherId: id }], () => `${unit.name} merged into ${own[0].name}`)) mode = 'orders';
+            if (runAll([{ type: 'merge', unitId: own[0].id, otherId: id }], () => `${unit.name} merged into ${own[0].name}`))
+                mode = 'orders';
             refresh();
             return;
         }
@@ -396,13 +413,19 @@ export function createGameController({ view, store, getMap, info, actionBar, toa
         const primary = units[0] ?? null;
         const own = units.length > 0 && units.every(isOwn);
 
-        const candidates = mode === 'merge' && primary ? unitsIn(c, primary.province).filter((u) => u.id !== primary.id && u.faction === primary.faction).map((u) => u.id) : [];
+        const candidates =
+            mode === 'merge' && primary
+                ? unitsIn(c, primary.province)
+                      .filter((u) => u.id !== primary.id && u.faction === primary.faction)
+                      .map((u) => u.id)
+                : [];
         view.renderUnits(c.units, { selectedIds: selection, candidates });
 
         const { balance } = actor();
         const targets = [];
         if (own && showsMoves()) {
-            for (const m of groupMoves(units)) targets.push({ province: m.province, kind: 'move', label: `${m.cost} AP`, affordable: m.cost <= balance });
+            for (const m of groupMoves(units))
+                targets.push({ province: m.province, kind: 'move', label: `${m.cost} AP`, affordable: m.cost <= balance });
         }
         if (own && showsAttacks()) {
             for (const a of groupAttacks(units)) {
@@ -450,7 +473,11 @@ export function createGameController({ view, store, getMap, info, actionBar, toa
             rows.push(['Terrain', [swatch(terrain.color), `${terrain.label} (impassable)`]], ['Borders', [names(p.borders)]]);
         } else {
             const owner = map.factions[p.owner];
-            rows.push(['Owner', [swatch(owner.color), owner.name]], ['Terrain', [swatch(terrain.color), terrain.label]], ['Neighbours', [names(p.neighbours)]]);
+            rows.push(
+                ['Owner', [swatch(owner.color), owner.name]],
+                ['Terrain', [swatch(terrain.color), terrain.label]],
+                ['Neighbours', [names(p.neighbours)]],
+            );
         }
         const here = unitsIn(campaign(), p.id);
         info.replaceChildren(
@@ -468,7 +495,12 @@ export function createGameController({ view, store, getMap, info, actionBar, toa
                                 {},
                                 h(
                                     'button',
-                                    { type: 'button', class: `unit-row${selected ? ' selected' : ''}`, 'aria-pressed': String(selected), onclick: (e) => selectUnit(u.id, e) },
+                                    {
+                                        type: 'button',
+                                        class: `unit-row${selected ? ' selected' : ''}`,
+                                        'aria-pressed': String(selected),
+                                        onclick: (e) => selectUnit(u.id, e),
+                                    },
                                     swatch(map.factions[u.faction].color),
                                     h('span', { class: 'unit-name' }, u.name),
                                     h('span', { class: 'unit-stats' }, `${u.size} bn`),
@@ -484,7 +516,18 @@ export function createGameController({ view, store, getMap, info, actionBar, toa
 
     function unitDetails(u) {
         const bar = (value, max, label) =>
-            h('span', { class: 'meter', role: 'meter', 'aria-valuemin': '0', 'aria-valuemax': String(max), 'aria-valuenow': String(value), 'aria-label': label }, h('span', { style: `width:${(100 * value) / max}%` }));
+            h(
+                'span',
+                {
+                    class: 'meter',
+                    role: 'meter',
+                    'aria-valuemin': '0',
+                    'aria-valuemax': String(max),
+                    'aria-valuenow': String(value),
+                    'aria-label': label,
+                },
+                h('span', { style: `width:${(100 * value) / max}%` }),
+            );
         return h(
             'dl',
             { class: 'unit-details' },

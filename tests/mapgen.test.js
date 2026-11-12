@@ -196,10 +196,13 @@ describe('borders', () => {
 describe('seas', () => {
     const seeds = ['demo', 'alpha', 'warmind', 42];
     const isSea = (p) => p.terrain === 'sea';
-    const shoelace = (poly) => Math.abs(poly.reduce((s, [x0, y0], i) => {
-        const [x1, y1] = poly[(i + 1) % poly.length];
-        return s + x0 * y1 - x1 * y0;
-    }, 0)) / 2;
+    const shoelace = (poly) =>
+        Math.abs(
+            poly.reduce((s, [x0, y0], i) => {
+                const [x1, y1] = poly[(i + 1) % poly.length];
+                return s + x0 * y1 - x1 * y0;
+            }, 0),
+        ) / 2;
 
     it.each(seeds)('are impassable, unowned and only border land (seed %s)', (seed) => {
         const { provinces } = generateMap({ seed });

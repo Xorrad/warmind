@@ -100,10 +100,17 @@ export function createBattleDialog(dialog) {
             terrainLine,
             h('div', { class: 'battle-sides' }, attackersBox, defendersBox),
             odds,
-            h('p', { class: 'battle-note' }, 'Each side rolls between ×0.6 and ×1.4. Every unit next to the province can join; winners move in, beaten defenders retreat or are destroyed.'),
+            h(
+                'p',
+                { class: 'battle-note' },
+                'Each side rolls between ×0.6 and ×1.4. Every unit next to the province can join; winners move in, beaten defenders retreat or are destroyed.',
+            ),
         );
         update();
-        actions.replaceChildren(button('Cancel', 'secondary', () => dialog.close()), confirm);
+        actions.replaceChildren(
+            button('Cancel', 'secondary', () => dialog.close()),
+            confirm,
+        );
         dialog.showModal();
         confirm.focus();
     }
@@ -116,7 +123,11 @@ export function createBattleDialog(dialog) {
     function showResult(report, map) {
         const province = map.provinces[report.province];
         const won = report.winner === 'attacker';
-        title.textContent = report.unopposed ? `${province.name} taken` : won ? `Victory at ${province.name}` : `Defeat at ${province.name}`;
+        title.textContent = report.unopposed
+            ? `${province.name} taken`
+            : won
+              ? `Victory at ${province.name}`
+              : `Defeat at ${province.name}`;
         const headline = report.unopposed
             ? `${province.name} was undefended: your troops marched in.`
             : won
@@ -130,7 +141,8 @@ export function createBattleDialog(dialog) {
             if (o.retreatedTo !== undefined) return `Retreated to ${map.provinces[o.retreatedTo].name}`;
             return attackerIds.has(o.id) && o.after.province === report.province ? `Moved into ${province.name}` : 'Holds its position';
         };
-        const change = (before, after, unit = '') => (after === null ? `${before}${unit} → 0` : before === after ? `${before}${unit}` : `${before}${unit} → ${after}${unit}`);
+        const change = (before, after, unit = '') =>
+            after === null ? `${before}${unit} → 0` : before === after ? `${before}${unit}` : `${before}${unit} → ${after}${unit}`;
         const row = (o) =>
             h(
                 'tr',
@@ -143,7 +155,8 @@ export function createBattleDialog(dialog) {
         // (replaceChildren would print `false`: drop the skipped parts)
         const parts = [
             h('p', { class: `battle-result ${won ? 'won' : 'lost'}` }, headline),
-            !report.unopposed && h('p', { class: 'battle-note' }, `Rolled power: you ${power(report.attackPower)} against ${power(report.defensePower)}.`),
+            !report.unopposed &&
+                h('p', { class: 'battle-note' }, `Rolled power: you ${power(report.attackPower)} against ${power(report.defensePower)}.`),
             h(
                 'table',
                 { class: 'battle-table' },

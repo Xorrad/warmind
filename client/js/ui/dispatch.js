@@ -55,7 +55,13 @@ export function createDispatchDialog(dialog) {
                 'section',
                 {},
                 h('h3', {}, 'Action points'),
-                h('ul', {}, ...granted.map((g) => h('li', {}, `${date(g.day)}: `, h('strong', { class: g.points ? 'pos' : 'neg' }, `+${g.points} AP`)))),
+                h(
+                    'ul',
+                    {},
+                    ...granted.map((g) =>
+                        h('li', {}, `${date(g.day)}: `, h('strong', { class: g.points ? 'pos' : 'neg' }, `+${g.points} AP`)),
+                    ),
+                ),
                 granted.length > 1 && h('p', { class: 'dispatch-total' }, `Total: +${total} AP`),
             ),
         );
@@ -78,7 +84,10 @@ export function createDispatchDialog(dialog) {
                                   { class: r.captured ? 'neg' : 'pos' },
                                   swatch(r.attackerFaction),
                                   ...(r.captured
-                                      ? [`${map.factions[r.attackerFaction].name} ${r.unopposed ? 'took undefended' : 'captured'} `, place(r.province)]
+                                      ? [
+                                            `${map.factions[r.attackerFaction].name} ${r.unopposed ? 'took undefended' : 'captured'} `,
+                                            place(r.province),
+                                        ]
                                       : [place(r.province), ` held against the ${map.factions[r.attackerFaction].name}`]),
                               ),
                           ),

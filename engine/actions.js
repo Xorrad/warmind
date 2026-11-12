@@ -114,7 +114,8 @@ export function validateAction(campaign, map, { faction, balance }, action) {
             if (!canMove(map, unit.province, to.id)) {
                 return { ok: false, reason: isPassable(to) ? `${to.name} is not next to the unit.` : `${to.name} is impassable.` };
             }
-            if (ownerOf(campaign, map, to.id) !== faction) return { ok: false, reason: `${to.name} is held by another faction: it has to be attacked.` };
+            if (ownerOf(campaign, map, to.id) !== faction)
+                return { ok: false, reason: `${to.name} is held by another faction: it has to be attacked.` };
             if (!movesLeft(unit)) return { ok: false, reason: `${unit.name} has already moved today.` };
             cost = moveCost(to);
             break;
@@ -133,7 +134,8 @@ export function validateAction(campaign, map, { faction, balance }, action) {
             break;
         }
         case 'split':
-            if (unit.size < UNITS.minSplitSize) return { ok: false, reason: `Only units of ${UNITS.minSplitSize} battalions or more can be split.` };
+            if (unit.size < UNITS.minSplitSize)
+                return { ok: false, reason: `Only units of ${UNITS.minSplitSize} battalions or more can be split.` };
             cost = ACTION_COSTS.split;
             break;
         default:
@@ -212,7 +214,9 @@ export function moveTargets(campaign, map, unitId) {
 export function attackTargets(campaign, map, unitId) {
     const unit = campaign.units.find((u) => u.id === unitId);
     if (!unit || !movesLeft(unit)) return [];
-    return map.provinces[unit.province].neighbours.filter((id) => isPassable(map.provinces[id]) && ownerOf(campaign, map, id) !== unit.faction);
+    return map.provinces[unit.province].neighbours.filter(
+        (id) => isPassable(map.provinces[id]) && ownerOf(campaign, map, id) !== unit.faction,
+    );
 }
 
 /**

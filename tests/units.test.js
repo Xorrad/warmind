@@ -1,6 +1,16 @@
 import { describe, it, expect } from 'vitest';
 import { generateMap } from '../engine/mapgen.js';
-import { deployUnits, mergeUnits, splitSizes, strengthenUnit, ordinal, addUnit, unitsIn, movesLeft, refreshMoves } from '../engine/units.js';
+import {
+    deployUnits,
+    mergeUnits,
+    splitSizes,
+    strengthenUnit,
+    ordinal,
+    addUnit,
+    unitsIn,
+    movesLeft,
+    refreshMoves,
+} from '../engine/units.js';
 import { validateAction, applyAction, moveTargets, moveCost, isPassable } from '../engine/actions.js';
 import { UNITS, ACTION_COSTS, TERRAINS } from '../engine/config.js';
 
@@ -12,7 +22,19 @@ const unit = (fields = {}) => ({ id: 1, name: '1st Division', faction: 0, provin
 
 describe('ordinal', () => {
     it('names regiments in English', () => {
-        expect([1, 2, 3, 4, 11, 12, 13, 21, 22, 101, 111].map(ordinal)).toEqual(['1st', '2nd', '3rd', '4th', '11th', '12th', '13th', '21st', '22nd', '101st', '111th']);
+        expect([1, 2, 3, 4, 11, 12, 13, 21, 22, 101, 111].map(ordinal)).toEqual([
+            '1st',
+            '2nd',
+            '3rd',
+            '4th',
+            '11th',
+            '12th',
+            '13th',
+            '21st',
+            '22nd',
+            '101st',
+            '111th',
+        ]);
     });
 });
 
@@ -106,18 +128,27 @@ describe('actions', () => {
             const front = ownedProvinces.find((p) => p.neighbours.some((n) => map.provinces[n].owner !== player.id));
             const enemy = front.neighbours.find((n) => map.provinces[n].owner !== player.id);
             const atFront = { ...campaign, units: [...campaign.units, { ...own, id: 999, province: front.id }] };
-            expect(validateAction(atFront, map, rich, { type: 'move', unitId: 999, to: enemy })).toMatchObject({ ok: false, reason: expect.stringMatching(/attacked/) });
+            expect(validateAction(atFront, map, rich, { type: 'move', unitId: 999, to: enemy })).toMatchObject({
+                ok: false,
+                reason: expect.stringMatching(/attacked/),
+            });
 
             const sea = map.provinces.find((p) => p.terrain === 'sea');
             expect(validateAction(campaign, map, rich, { type: 'move', unitId: own.id, to: sea.id }).ok).toBe(false);
 
             const far = ownedProvinces.find((p) => p.id !== own.province && !map.provinces[own.province].neighbours.includes(p.id));
-            expect(validateAction(campaign, map, rich, { type: 'move', unitId: own.id, to: far.id })).toMatchObject({ ok: false, reason: expect.stringMatching(/not next/) });
+            expect(validateAction(campaign, map, rich, { type: 'move', unitId: own.id, to: far.id })).toMatchObject({
+                ok: false,
+                reason: expect.stringMatching(/not next/),
+            });
         });
     });
 
     it('refuses actions without enough AP, on missing units and on enemy units', () => {
-        expect(validateAction(campaign, map, { faction: player.id, balance: 1 }, { type: 'strengthen', unitId: own.id })).toMatchObject({ ok: false, cost: ACTION_COSTS.strengthen });
+        expect(validateAction(campaign, map, { faction: player.id, balance: 1 }, { type: 'strengthen', unitId: own.id })).toMatchObject({
+            ok: false,
+            cost: ACTION_COSTS.strengthen,
+        });
         expect(validateAction(campaign, map, rich, { type: 'split', unitId: 12345 }).ok).toBe(false);
         const enemyUnit = campaign.units.find((u) => u.faction !== player.id);
         expect(validateAction(campaign, map, rich, { type: 'split', unitId: enemyUnit.id }).ok).toBe(false);
@@ -143,13 +174,19 @@ describe('actions', () => {
     it('merges two units in the same province only', () => {
         const split = applyAction(campaign, { type: 'split', unitId: own.id });
         const [a, b] = unitsIn(split, own.province);
-        expect(validateAction(split, map, rich, { type: 'merge', unitId: a.id, otherId: b.id })).toEqual({ ok: true, cost: ACTION_COSTS.merge });
+        expect(validateAction(split, map, rich, { type: 'merge', unitId: a.id, otherId: b.id })).toEqual({
+            ok: true,
+            cost: ACTION_COSTS.merge,
+        });
         const merged = applyAction(split, { type: 'merge', unitId: a.id, otherId: b.id });
         expect(unitsIn(merged, own.province)).toHaveLength(1);
         expect(unitsIn(merged, own.province)[0].size).toBe(own.size);
 
         const elsewhere = campaign.units.find((u) => u.faction === player.id && u.id !== own.id);
-        expect(validateAction(campaign, map, rich, { type: 'merge', unitId: own.id, otherId: elsewhere.id })).toMatchObject({ ok: false, reason: expect.stringMatching(/same province/) });
+        expect(validateAction(campaign, map, rich, { type: 'merge', unitId: own.id, otherId: elsewhere.id })).toMatchObject({
+            ok: false,
+            reason: expect.stringMatching(/same province/),
+        });
         const big = { ...campaign, units: [...campaign.units, { ...own, id: 500, size: UNITS.maxSize }] };
         expect(validateAction(big, map, rich, { type: 'merge', unitId: own.id, otherId: 500 }).ok).toBe(false);
     });
@@ -166,7 +203,10 @@ describe('daily moves', () => {
         expect(movesLeft(after)).toBe(UNITS.movesPerDay - 1);
         expect(moveTargets(moved, map, own.id)).toEqual([]);
         const back = map.provinces[first.province].neighbours.find((n) => map.provinces[n].owner === player.id) ?? second.province;
-        expect(validateAction(moved, map, rich, { type: 'move', unitId: own.id, to: back })).toMatchObject({ ok: false, reason: expect.stringMatching(/already moved/) });
+        expect(validateAction(moved, map, rich, { type: 'move', unitId: own.id, to: back })).toMatchObject({
+            ok: false,
+            reason: expect.stringMatching(/already moved/),
+        });
         // Other actions are still allowed
         expect(validateAction(moved, map, rich, { type: 'strengthen', unitId: own.id }).ok).toBe(true);
     });
@@ -188,7 +228,10 @@ describe('daily moves', () => {
         const split = applyAction(moved, { type: 'split', unitId: own.id });
         for (const u of unitsIn(split, to)) expect(movesLeft(u)).toBe(0);
         const fresh = { ...own, id: 777, province: to, movesUsed: 0 };
-        const merged = mergeUnits(fresh, moved.units.find((u) => u.id === own.id));
+        const merged = mergeUnits(
+            fresh,
+            moved.units.find((u) => u.id === own.id),
+        );
         expect(movesLeft(merged)).toBe(0);
     });
 });

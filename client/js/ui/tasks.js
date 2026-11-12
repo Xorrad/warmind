@@ -51,7 +51,13 @@ const paging = new WeakMap();
 function fillPaged(container, tasks, ctx, emptyText) {
     let state = paging.get(container);
     if (!state) {
-        state = { shown: PAGE_SIZE, tasks: [], ctx: null, observer: null, sentinel: h('li', { class: 'task-sentinel', 'aria-hidden': 'true' }) };
+        state = {
+            shown: PAGE_SIZE,
+            tasks: [],
+            ctx: null,
+            observer: null,
+            sentinel: h('li', { class: 'task-sentinel', 'aria-hidden': 'true' }),
+        };
         // Implicit root: works whether the list or the whole sidebar (mobile) scrolls
         state.observer = new IntersectionObserver(
             (entries) => {
@@ -98,7 +104,17 @@ function taskItem(task, { now, gains, callbacks: { onToggle, onEdit, onDelete } 
         ),
         gains.has(task.id) && gainBadge(gains.get(task.id), overdue),
         task.recurring && streakBadge(task, now, done),
-        h('button', { type: 'button', class: 'task-delete', 'aria-label': `Delete "${task.title}"`, title: 'Delete', onclick: () => onDelete(task.id) }, '×'),
+        h(
+            'button',
+            {
+                type: 'button',
+                class: 'task-delete',
+                'aria-label': `Delete "${task.title}"`,
+                title: 'Delete',
+                onclick: () => onDelete(task.id),
+            },
+            '×',
+        ),
     );
 }
 
@@ -114,9 +130,17 @@ function meta(task, now, overdue) {
             late && h('span', { class: 'tag late' }, 'late'),
         );
     } else {
-        parts.push(h('span', { class: `tag due${overdue ? ' late' : ''}` }, overdue ? `Overdue · ${formatDue(task, now)}` : formatDue(task, now)));
+        parts.push(
+            h('span', { class: `tag due${overdue ? ' late' : ''}` }, overdue ? `Overdue · ${formatDue(task, now)}` : formatDue(task, now)),
+        );
     }
-    parts.push(h('span', { class: 'severity', title: `Severity ${task.severity} of ${TASKS.severity.max}` }, '●'.repeat(task.severity) + '○'.repeat(TASKS.severity.max - task.severity)));
+    parts.push(
+        h(
+            'span',
+            { class: 'severity', title: `Severity ${task.severity} of ${TASKS.severity.max}` },
+            '●'.repeat(task.severity) + '○'.repeat(TASKS.severity.max - task.severity),
+        ),
+    );
     return parts;
 }
 
@@ -127,12 +151,13 @@ function meta(task, now, overdue) {
 function streakBadge(task, now, done) {
     const streak = streakOf(task, now);
     const state = done ? 'kept' : streak ? 'at-risk' : 'none';
-    const label = done
-        ? `${streak}-day streak`
-        : streak
-          ? `${streak}-day streak, do it today to keep it`
-          : 'No streak yet';
-    return h('span', { class: `streak-badge ${state}`, title: label, 'aria-label': label }, h('span', { 'aria-hidden': 'true' }, '🔥'), String(streak));
+    const label = done ? `${streak}-day streak` : streak ? `${streak}-day streak, do it today to keep it` : 'No streak yet';
+    return h(
+        'span',
+        { class: `streak-badge ${state}`, title: label, 'aria-label': label },
+        h('span', { 'aria-hidden': 'true' }, '🔥'),
+        String(streak),
+    );
 }
 
 /**
