@@ -79,9 +79,10 @@ function fillPaged(container, tasks, ctx, emptyText) {
 function taskItem(task, { now, gains, callbacks: { onToggle, onEdit, onDelete } }) {
     const overdue = isOverdue(task, now);
     const done = task.recurring ? isDoneToday(task, now) : task.completedAt !== null;
+    const dueToday = !task.recurring && !done && !overdue && new Date(task.dueAt).toDateString() === now.toDateString();
     return h(
         'li',
-        { class: `task${overdue ? ' overdue' : ''}${done ? ' done' : ''}${task.recurring ? ' daily' : ''}` },
+        { class: `task${overdue ? ' overdue' : ''}${dueToday ? ' due-today' : ''}${done ? ' done' : ''}${task.recurring ? ' daily' : ''}` },
         h('input', {
             type: 'checkbox',
             class: 'task-check',

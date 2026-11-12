@@ -522,6 +522,18 @@
     background: var(--danger-bg);
 }
 
+/* Due later today: will be overdue at midnight */
+.task.due-today {
+    border-color: var(--warning);
+    border-left-color: var(--warning);
+    background: var(--warning-bg);
+}
+
+.task.due-today .tag.due {
+    font-weight: 700;
+    color: var(--warning);
+}
+
 .task-check {
     width: 18px;
     height: 18px;
