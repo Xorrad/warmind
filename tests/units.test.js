@@ -69,7 +69,7 @@ describe('unit operations', () => {
     });
 
     it('numbers new units per faction', () => {
-        let c = { seed: 'x', units: [], nextId: 7, numbers: { 0: 3 } };
+        const c = { seed: 'x', units: [], nextId: 7, numbers: { 0: 3 } };
         const first = addUnit(c, { faction: 0, province: 0, size: 1, strength: 50, motivation: 0.5 });
         expect(first.unit).toMatchObject({ id: 7, name: '3rd Division' });
         expect(first.campaign).toMatchObject({ nextId: 8, numbers: { 0: 4 } });
@@ -162,8 +162,8 @@ describe('daily moves', () => {
     it('lets a unit move once a day', () => {
         const [first, second] = moveTargets(campaign, map, own.id);
         const moved = applyAction(campaign, { type: 'move', unitId: own.id, to: first.province });
-        const unit = moved.units.find((u) => u.id === own.id);
-        expect(movesLeft(unit)).toBe(UNITS.movesPerDay - 1);
+        const after = moved.units.find((u) => u.id === own.id);
+        expect(movesLeft(after)).toBe(UNITS.movesPerDay - 1);
         expect(moveTargets(moved, map, own.id)).toEqual([]);
         const back = map.provinces[first.province].neighbours.find((n) => map.provinces[n].owner === player.id) ?? second.province;
         expect(validateAction(moved, map, rich, { type: 'move', unitId: own.id, to: back })).toMatchObject({ ok: false, reason: expect.stringMatching(/already moved/) });

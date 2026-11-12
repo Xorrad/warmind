@@ -63,7 +63,7 @@ function save(key, value) {
 function loadTasks() {
     const tasks = load(TASKS_KEY, []);
     // Drop fields from older versions (priority was removed)
-    return Array.isArray(tasks) ? tasks.map(({ priority, ...task }) => task) : [];
+    return Array.isArray(tasks) ? tasks.map(({ priority: _priority, ...task }) => task) : [];
 }
 
 /** @returns {import('/engine/tick.js').Ledger} */

@@ -191,7 +191,7 @@ describe('ownership', () => {
     });
 
     it('falls back to the map for campaigns saved before ownership', () => {
-        const { owners, ...old } = base;
+        const { owners: _owners, ...old } = base;
         expect(ownerOf(old, map, 5)).toBe(map.provinces[5].owner);
         expect(ownedMap(map, old)).toBe(map);
     });
@@ -243,7 +243,7 @@ describe('attacks with several units', () => {
 
     it('makes every attacker share the outcome; survivors of a victory move in', () => {
         const { campaign, target, a, b } = pincer();
-        let checked = { won: false, lost: false };
+        const checked = { won: false, lost: false };
         for (let seed = 0; seed < 40 && !(checked.won && checked.lost); seed++) {
             const { campaign: after, report } = resolveBattle(campaign, map, [a.id, b.id], target, createRng(seed));
             expect(report.attackers.map((o) => o.id)).toEqual([a.id, b.id]);

@@ -388,8 +388,8 @@ function pickSeas(rng, provinces, elevation, o) {
         for (const small of bodyGroups.filter((g) => g.length < minCells)) {
             const touching = bodyGroups.filter((g) => g !== small && g.length && g.some((c) => small.some((s) => seaNeighbours(s).includes(c))));
             if (!touching.length) continue;
-            const target = touching.sort((a, b) => a.length - b.length)[0];
-            target.push(...small.splice(0));
+            const into = touching.sort((a, b) => a.length - b.length)[0];
+            into.push(...small.splice(0));
         }
         groups.push(...bodyGroups.filter((g) => g.length));
     }
@@ -509,16 +509,16 @@ function carveRanges(rng, provinces, edges, elevation, o) {
             const here = vertices.get(path.at(-1));
             let best = null;
             let bestScore = -Infinity;
-            for (const link of here.links) {
-                if (path.includes(link.to) || blocked.has(link.to)) continue;
-                const dir = Math.atan2(link.point[1] - here.point[1], link.point[0] - here.point[0]);
+            for (const step of here.links) {
+                if (path.includes(step.to) || blocked.has(step.to)) continue;
+                const dir = Math.atan2(step.point[1] - here.point[1], step.point[0] - here.point[0]);
                 const align = Math.cos(dir - heading);
                 if (align < 0) continue; // no sharp turn back
                 if (lastDir !== null && Math.cos(dir - lastDir) < -0.2) continue; // no hairpin
                 const score = align + rng.range(0, 0.6);
                 if (score > bestScore) {
                     bestScore = score;
-                    best = { link, dir };
+                    best = { link: step, dir };
                 }
             }
             if (!best) break;
