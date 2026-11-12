@@ -208,8 +208,7 @@ export function toggleDone(task, now) {
  * Split tasks into the three side panels, each sorted for display:
  *  - todo: unfinished one-off tasks, by due date (overdue ones come first);
  *  - streaks: every recurring task, those still to do today first;
- *  - completed: one-off tasks completed today, most recent first.
- * One-off tasks completed on an earlier day are not shown.
+ *  - completed: every completed one-off task, most recent first.
  * @param {Task[]} tasks
  * @param {Date} now
  * @returns {{ todo: Task[], streaks: Task[], completed: Task[] }}
@@ -223,7 +222,7 @@ export function partitionTasks(tasks, now) {
         .filter((t) => t.recurring)
         .sort((a, b) => Number(isDoneToday(a, now)) - Number(isDoneToday(b, now)) || byTitle(a, b));
     const completed = tasks
-        .filter((t) => !t.recurring && isDoneToday(t, now))
+        .filter((t) => !t.recurring && isCompleted(t, now))
         .sort((a, b) => Date.parse(b.completedAt) - Date.parse(a.completedAt) || byTitle(a, b));
     return { todo, streaks, completed };
 }

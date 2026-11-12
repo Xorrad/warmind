@@ -10,11 +10,11 @@ import { generateMap } from '/engine/mapgen.js';
 import { TERRAINS } from '/engine/config.js';
 import { createMapView } from './ui/map.js';
 import { renderVersion, renderPoints } from './ui/topbar.js';
-import { renderTasks } from './ui/tasks.js';
+import { renderTasks, setupPanelToggles } from './ui/tasks.js';
 import { createTaskDialog } from './ui/modals.js';
 import { store } from './store.js';
 import { createTask, updateTask, toggleDone } from '/engine/tasks.js';
-import { settleDays, estimateToday } from '/engine/tick.js';
+import { settleDays, estimateToday, completionGains } from '/engine/tick.js';
 
 const seedInput = /** @type {HTMLInputElement} */ (document.getElementById('seed'));
 const modeButton = document.getElementById('mode');
@@ -80,8 +80,10 @@ function settle() {
 function renderAll() {
     const now = new Date();
     const { tasks, ledger } = store.get();
-    renderTasks(panels, tasks, now, taskCallbacks);
-    if (map) renderPoints(pointsEl, ledger.balance, estimateToday(tasks, { provincesOwned: provincesOwned(), now }));
+    if (!map) return;
+    const context = { provincesOwned: provincesOwned(), now };
+    renderTasks(panels, tasks, now, completionGains(tasks, context), taskCallbacks);
+    renderPoints(pointsEl, ledger.balance, estimateToday(tasks, context));
 }
 
 store.subscribe(renderAll);
@@ -90,6 +92,8 @@ setInterval(() => {
     settle();
     renderAll();
 }, 60 * 1000);
+
+setupPanelToggles(document.getElementById('sidebar'));
 
 for (const button of document.querySelectorAll('[data-add]')) {
     button.addEventListener('click', () => taskDialog.open(null, button.dataset.add));

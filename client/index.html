@@ -38,20 +38,32 @@
         <section class="panel panel-todo">
           <header class="panel-head">
             <h2>Todo list <span class="count" data-count="todo">0</span></h2>
-            <button type="button" class="add" data-add="once" aria-label="Add a task">+ Task</button>
+            <div class="panel-actions">
+              <button type="button" class="add" data-add="once" aria-label="Add a task">+ Task</button>
+              <button type="button" class="icon-btn" data-panel-maximize="todo" aria-pressed="false" aria-label="Maximize Todo list" title="Maximize"><svg viewBox="0 0 16 16" aria-hidden="true"><path class="icon-max" d="M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4"/><path class="icon-restore" d="M6 2v4H2M14 6h-4V2M10 14v-4h4M2 10h4v4"/></svg></button>
+              <button type="button" class="icon-btn panel-collapse" data-panel-collapse="todo" aria-controls="todo-list" aria-expanded="true" aria-label="Collapse Todo list" title="Collapse"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6l4 4 4-4"/></svg></button>
+            </div>
           </header>
           <ul class="task-list" id="todo-list"></ul>
         </section>
         <section class="panel panel-streaks">
           <header class="panel-head">
             <h2>Streaks <span class="count" data-count="streaks">0</span></h2>
-            <button type="button" class="add" data-add="daily" aria-label="Add a daily task">+ Daily</button>
+            <div class="panel-actions">
+              <button type="button" class="add" data-add="daily" aria-label="Add a daily task">+ Daily</button>
+              <button type="button" class="icon-btn" data-panel-maximize="streaks" aria-pressed="false" aria-label="Maximize Streaks" title="Maximize"><svg viewBox="0 0 16 16" aria-hidden="true"><path class="icon-max" d="M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4"/><path class="icon-restore" d="M6 2v4H2M14 6h-4V2M10 14v-4h4M2 10h4v4"/></svg></button>
+              <button type="button" class="icon-btn panel-collapse" data-panel-collapse="streaks" aria-controls="streak-list" aria-expanded="true" aria-label="Collapse Streaks" title="Collapse"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6l4 4 4-4"/></svg></button>
+            </div>
           </header>
           <ul class="task-list" id="streak-list"></ul>
         </section>
         <section class="panel panel-completed">
           <header class="panel-head">
             <h2>Completed <span class="count" data-count="completed">0</span></h2>
+            <div class="panel-actions">
+              <button type="button" class="icon-btn" data-panel-maximize="completed" aria-pressed="false" aria-label="Maximize Completed" title="Maximize"><svg viewBox="0 0 16 16" aria-hidden="true"><path class="icon-max" d="M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4"/><path class="icon-restore" d="M6 2v4H2M14 6h-4V2M10 14v-4h4M2 10h4v4"/></svg></button>
+              <button type="button" class="icon-btn panel-collapse" data-panel-collapse="completed" aria-controls="completed-list" aria-expanded="true" aria-label="Collapse Completed" title="Collapse"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6l4 4 4-4"/></svg></button>
+            </div>
           </header>
           <ul class="task-list" id="completed-list"></ul>
         </section>

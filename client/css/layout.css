@@ -63,8 +63,8 @@
 }
 
 .sidebar {
-    display: grid;
-    grid-template-rows: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr);
+    display: flex;
+    flex-direction: column;
     gap: 10px;
     padding: 10px;
     min-height: 0;
@@ -98,8 +98,7 @@
     }
 
     .app.show-tasks .sidebar {
-        display: grid;
-        grid-template-rows: auto auto auto;
+        display: flex;
         overflow-y: auto;
         padding-bottom: 72px;
     }

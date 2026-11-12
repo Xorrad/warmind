@@ -187,6 +187,116 @@
     background: var(--panel-todo);
 }
 
+/* Share of the sidebar height; a collapsed panel shrinks to its header */
+.panel-todo {
+    flex: 2 1 0;
+}
+
+.panel-streaks,
+.panel-completed {
+    flex: 1 1 0;
+}
+
+.panel.collapsed {
+    flex: 0 0 auto;
+}
+
+.panel.collapsed .task-list {
+    display: none;
+}
+
+/* Maximized (double-click on a header): it fills the sidebar, the others
+   shrink to their headers */
+.sidebar.has-maximized .panel {
+    flex: 0 0 auto;
+}
+
+.sidebar.has-maximized .panel:not(.maximized) .task-list {
+    display: none;
+}
+
+.sidebar.has-maximized .panel.maximized {
+    flex: 1 1 0;
+}
+
+.panel.maximized .task-list {
+    display: block;
+}
+
+.task-sentinel {
+    height: 1px;
+}
+
+@media (max-width: 720px) {
+    .panel,
+    .panel.collapsed {
+        flex: 0 0 auto;
+    }
+}
+
+.panel-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.icon-btn {
+    display: inline-grid;
+    place-items: center;
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    background: none;
+    color: var(--text);
+    cursor: pointer;
+}
+
+.icon-btn:hover {
+    border-color: var(--border);
+    background: var(--surface);
+}
+
+.icon-btn:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+}
+
+.icon-btn svg {
+    width: 16px;
+    height: 16px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+/* Maximize shows outward corners, restore inward ones */
+.icon-btn .icon-restore,
+.icon-btn[aria-pressed='true'] .icon-max {
+    display: none;
+}
+
+.icon-btn[aria-pressed='true'] .icon-restore {
+    display: inline;
+}
+
+.icon-btn[aria-pressed='true'] {
+    border-color: var(--border);
+    background: var(--surface);
+}
+
+/* Chevron: down when open, right when collapsed or shrunk */
+.panel-collapse svg {
+    transition: transform 0.15s;
+}
+
+.panel-collapse[aria-expanded='false'] svg {
+    transform: rotate(-90deg);
+}
+
 .panel-head {
     display: flex;
     align-items: center;
@@ -240,9 +350,8 @@
 }
 
 .task {
-    display: grid;
-    grid-template-columns: auto 1fr auto;
-    align-items: start;
+    display: flex;
+    align-items: flex-start;
     gap: 8px;
     padding: 7px 8px;
     margin-top: 6px;
@@ -267,6 +376,7 @@
 }
 
 .task-body {
+    flex: 1;
     display: flex;
     flex-direction: column;
     gap: 3px;
@@ -306,8 +416,24 @@
     color: var(--danger);
 }
 
-.task.daily {
-    grid-template-columns: auto 1fr auto auto;
+.gain-badge {
+    padding: 1px 8px;
+    border-radius: 999px;
+    background: #e3efdc;
+    color: var(--success);
+    font-size: 0.8rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.gain-badge.zero {
+    background: var(--bg);
+    color: var(--text-muted);
+}
+
+.task.overdue .gain-badge:not(.zero) {
+    background: var(--success);
+    color: #fff;
 }
 
 .streak-badge {

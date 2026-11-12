@@ -12,7 +12,7 @@ import {
     shiftDay,
 } from '../engine/tasks.js';
 import { computeDailyPoints, urgency } from '../engine/points.js';
-import { settleDays, estimateToday, endOfDay } from '../engine/tick.js';
+import { settleDays, estimateToday, endOfDay, completionGains } from '../engine/tick.js';
 import { POINTS } from '../engine/config.js';
 
 // Fixed local "now": 12 Nov 2026, 10:00
@@ -112,7 +112,7 @@ describe('partitionTasks', () => {
         const { todo, streaks, completed } = partitionTasks([later, run, doneNow, soon, cards, late, doneBefore], now);
         expect(todo.map((t) => t.title)).toEqual(['Late', 'Soon', 'Later']);
         expect(streaks.map((t) => t.title)).toEqual(['Run', 'Cards']);
-        expect(completed.map((t) => t.title)).toEqual(['Done']);
+        expect(completed.map((t) => t.title)).toEqual(['Done', 'Old']);
     });
 });
 
@@ -224,5 +224,37 @@ describe('estimateToday', () => {
 
     it('evaluates at the very end of the day', () => {
         expect(endOfDay('2026-11-12').getTime()).toBe(new Date(2026, 10, 13).getTime() - 1);
+    });
+});
+
+describe('completionGains', () => {
+    const ctx = { provincesOwned: 10, now };
+
+    it('equals the rise in the estimate when the task is completed', () => {
+        const a = oneOff({ title: 'A', severity: 5, dueAt: inDays(1) });
+        const b = oneOff({ title: 'B', severity: 2, dueAt: inDays(3) });
+        const gains = completionGains([a, b], ctx);
+        const before = estimateToday([a, b], ctx).total;
+        expect(gains.get(a.id)).toBe(estimateToday([toggleDone(a, now), b], ctx).total - before);
+        expect(gains.get(a.id)).toBeGreaterThan(gains.get(b.id));
+    });
+
+    it('credits an overdue task with unlocking the whole day', () => {
+        const late = oneOff({ dueAt: inDays(-1) });
+        expect(completionGains([late], ctx).get(late.id)).toBe(estimateToday([toggleDone(late, now)], ctx).total);
+    });
+
+    it('is zero while another task stays overdue', () => {
+        const late1 = oneOff({ dueAt: inDays(-1) });
+        const late2 = oneOff({ dueAt: inDays(-2) });
+        expect(completionGains([late1, late2], ctx).get(late1.id)).toBe(0);
+    });
+
+    it('covers daily tasks not done today and skips finished tasks', () => {
+        const run = daily({ severity: 3 });
+        const done = toggleDone(oneOff(), now);
+        const gains = completionGains([run, done, toggleDone(daily(), now)], ctx);
+        expect([...gains.keys()]).toEqual([run.id]);
+        expect(gains.get(run.id)).toBeGreaterThan(0);
     });
 });

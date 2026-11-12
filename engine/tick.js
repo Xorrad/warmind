@@ -8,7 +8,7 @@
  */
 
 import { computeDailyPoints } from './points.js';
-import { dayKey, shiftDay } from './tasks.js';
+import { dayKey, shiftDay, isDoneToday, isCompleted, existsAt, toggleDone } from './tasks.js';
 
 /**
  * @typedef {object} Ledger
@@ -56,4 +56,25 @@ export function estimateToday(tasks, { provincesOwned, now }) {
     // Judged at the end of the day: a task due later today and still
     // unfinished then counts as overdue, exactly as the settlement will see it
     return computeDailyPoints(tasks, { provincesOwned, now: endOfDay(dayKey(now)) });
+}
+
+/**
+ * What completing each open task right now would add to today's estimate,
+ * all effects included: its penalty disappears, the completion bonus grows
+ * (until its cap) and, for an overdue task, the day may stop being zeroed.
+ * Open tasks are unfinished one-off tasks and daily tasks not done today.
+ * @param {import('./tasks.js').Task[]} tasks
+ * @param {{ provincesOwned: number, now: Date }} context
+ * @returns {Map<string, number>} Task id → points gained (may be 0).
+ */
+export function completionGains(tasks, context) {
+    const current = estimateToday(tasks, context).total;
+    const gains = new Map();
+    for (const task of tasks) {
+        const open = task.recurring ? !isDoneToday(task, context.now) : !isCompleted(task, context.now);
+        if (!open || !existsAt(task, context.now)) continue;
+        const after = tasks.map((t) => (t === task ? toggleDone(t, context.now) : t));
+        gains.set(task.id, estimateToday(after, context).total - current);
+    }
+    return gains;
 }
