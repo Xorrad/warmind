@@ -1,0 +1,35 @@
+/* layout.css: top bar / side panel / map grid */
+
+.app {
+    display: grid;
+    grid-template-rows: auto 1fr;
+    height: 100vh;
+}
+
+.topbar {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 8px 16px;
+    background: var(--surface-alt);
+    border-bottom: 2px solid var(--border);
+    flex-wrap: wrap;
+}
+
+.brand {
+    font-weight: 800;
+    font-size: 1.4rem;
+    letter-spacing: 0.04em;
+}
+
+.brand small {
+    font-size: 0.65rem;
+    font-weight: 500;
+    color: var(--text-muted);
+}
+
+.map-area {
+    position: relative;
+    overflow: hidden;
+    background: var(--map-bg);
+}

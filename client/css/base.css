@@ -1,0 +1,38 @@
+/* base.css: design tokens and element defaults */
+
+:root {
+    --bg: #eef1f5;
+    --surface: #ffffff;
+    --surface-alt: #e3e8ef;
+    --text: #1d232b;
+    --text-muted: #5b6573;
+    --border: #2b3138;
+    --accent: #3b6fb6;
+    --map-stroke: #2b3138;
+    --map-bg: #cfd5dc;
+    --radius: 8px;
+    --font: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    margin: 0;
+    height: 100%;
+}
+
+body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+}
+
+button,
+input {
+    font: inherit;
+}

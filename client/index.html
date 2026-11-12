@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>WarMind</title>
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/components.css">
+  <script type="importmap">
+    { "imports": { "d3-delaunay": "/vendor/d3-delaunay/d3-delaunay.mjs" } }
+  </script>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">WARMIND <small>v0.1.0</small></div>
+      <!-- Map prototype controls (temporary, will move to settings) -->
+      <div class="dev-controls">
+        <label>Seed <input id="seed" type="text" spellcheck="false"></label>
+        <button id="regenerate" type="button">Regenerate</button>
+        <button id="random" type="button">Random</button>
+        <button id="mode" type="button">Terrain view</button>
+      </div>
+    </header>
+    <main class="map-area">
+      <div id="map" class="map"></div>
+      <aside id="province-info" class="province-info" hidden></aside>
+    </main>
+  </div>
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
