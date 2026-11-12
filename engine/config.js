@@ -41,6 +41,31 @@ export const TERRAINS = {
     range: { label: 'Mountain range', color: '#5e5650', passable: false },
 };
 
+/**
+ * Daily action points. Each day a faction gets
+ *   base + perProvince × provinces owned
+ * minus, for every unfinished task, severity × urgency, where
+ *   urgency = clamp(1 − daysLeft / urgencyWindowDays, minUrgency, 1)
+ * plus completionBonus per task completed that day (up to completionBonusCap).
+ * Any overdue unfinished task sets the whole amount to zero.
+ */
+export const POINTS = {
+    base: 5,
+    perProvince: 0.2,
+    urgencyWindowDays: 7,
+    minUrgency: 0.2,
+    completionBonus: 1,
+    completionBonusCap: 5,
+};
+
+/** Task fields: allowed values. */
+export const TASKS = {
+    severity: { min: 1, max: 5 },
+    titleMaxLength: 120,
+    /** Days of history kept for recurring (streak) tasks. */
+    historyDays: 400,
+};
+
 /** Faction identities. Index 0 is always the player. */
 export const FACTIONS = [
     { name: 'Provisional Government', color: '#3b6fb6' },
