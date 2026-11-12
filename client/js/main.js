@@ -12,7 +12,7 @@ import { createMapView } from './ui/map.js';
 import { renderVersion, renderPoints } from './ui/topbar.js';
 import { renderTasks, setupPanelToggles } from './ui/tasks.js';
 import { createTaskDialog } from './ui/modals.js';
-import { store } from './store.js';
+import { store, session } from './store.js';
 import { createTask, updateTask, toggleDone } from '/engine/tasks.js';
 import { settleDays, estimateToday, completionGains } from '/engine/tick.js';
 
@@ -94,6 +94,26 @@ setInterval(() => {
 }, 60 * 1000);
 
 setupPanelToggles(document.getElementById('sidebar'));
+
+// Test session indicator, with links to reset or leave it
+if (session) {
+    const badge = document.getElementById('session-badge');
+    badge.querySelector('[data-session-name]').textContent = session;
+    const link = (fn) => {
+        const url = new URL(location.href);
+        fn(url.searchParams);
+        return url.pathname + url.search;
+    };
+    badge.querySelector('[data-session-reset]').addEventListener('click', (e) => {
+        e.preventDefault();
+        location.href = link((p) => p.set('reset', ''));
+    });
+    badge.querySelector('[data-session-exit]').addEventListener('click', (e) => {
+        e.preventDefault();
+        location.href = link((p) => p.delete('session'));
+    });
+    badge.hidden = false;
+}
 
 for (const button of document.querySelectorAll('[data-add]')) {
     button.addEventListener('click', () => taskDialog.open(null, button.dataset.add));

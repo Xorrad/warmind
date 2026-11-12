@@ -171,6 +171,25 @@
     color: var(--danger);
 }
 
+/* ---------- Test session badge (top bar) ---------- */
+
+.session-badge {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 4px 12px;
+    border: 2px dashed #a0661a;
+    border-radius: 999px;
+    background: #fbe7c6;
+    color: #6b3f06;
+    font-size: 0.85rem;
+}
+
+.session-badge a {
+    color: inherit;
+    font-weight: 700;
+}
+
 /* ---------- Task panels ---------- */
 
 .panel {

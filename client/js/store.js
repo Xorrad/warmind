@@ -3,10 +3,34 @@
  *
  * Tasks and the points ledger are saved in localStorage for now; the
  * campaign API replaces this once accounts exist.
+ *
+ * Test sessions: `?session=<name>` keeps its data under separate keys, so
+ * the real data is never touched. The "demo" session is filled with
+ * generated tasks the first time (or again with `&reset`); any other name
+ * starts empty.
  */
 
-const TASKS_KEY = 'warmind.tasks.v1';
-const LEDGER_KEY = 'warmind.ledger.v1';
+import { generateDemoData } from '/engine/demo.js';
+
+const params = new URLSearchParams(location.search);
+/** Name of the test session, or null for the real data. */
+export const session = params.get('session')?.replace(/[^\w-]/g, '') || null;
+
+const prefix = session ? `warmind.session.${session}.` : 'warmind.';
+const TASKS_KEY = `${prefix}tasks.v1`;
+const LEDGER_KEY = `${prefix}ledger.v1`;
+
+if (session && params.has('reset')) {
+    try {
+        localStorage.removeItem(TASKS_KEY);
+        localStorage.removeItem(LEDGER_KEY);
+    } catch {
+        // Nothing stored anyway
+    }
+    // Drop "reset" so reloading the page does not wipe the session again
+    params.delete('reset');
+    history.replaceState(null, '', `${location.pathname}?${params}`);
+}
 
 /**
  * @template T
@@ -61,8 +85,19 @@ function loadLedger() {
     return ledger && typeof ledger.balance === 'number' ? ledger : { balance: 0, settledThrough: null };
 }
 
-export const store = createStore({ tasks: loadTasks(), ledger: loadLedger() });
+function initialState() {
+    if (session === 'demo' && load(TASKS_KEY, null) === null) {
+        return generateDemoData({ now: new Date() });
+    }
+    return { tasks: loadTasks(), ledger: loadLedger() };
+}
+
+export const store = createStore(initialState());
 store.subscribe((s) => {
     save(TASKS_KEY, s.tasks);
     save(LEDGER_KEY, s.ledger);
 });
+
+// Save the generated demo data right away
+save(TASKS_KEY, store.get().tasks);
+save(LEDGER_KEY, store.get().ledger);
