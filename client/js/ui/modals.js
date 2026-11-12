@@ -4,6 +4,7 @@
 
 import { TASKS } from '/engine/config.js';
 import { validateTask } from '/engine/tasks.js';
+import { now } from '../clock.js';
 
 /** Value for a datetime-local input, in local time. */
 function toLocalInput(date) {
@@ -50,7 +51,7 @@ export function createTaskDialog(dialog, onSave) {
         button.addEventListener('click', () => {
             let from = fields.dueAt.value ? new Date(fields.dueAt.value) : null;
             if (!from || Number.isNaN(from.getTime())) {
-                from = new Date();
+                from = now();
                 from.setHours(23, 59, 0, 0);
             }
             const delta = { days: Number(button.dataset.addDays ?? 0), months: Number(button.dataset.addMonths ?? 0) };
@@ -98,7 +99,7 @@ export function createTaskDialog(dialog, onSave) {
         open(task = null, kind = 'once') {
             editingId = task?.id ?? null;
             heading.textContent = task ? 'Edit task' : kind === 'daily' ? 'New daily task' : 'New task';
-            const defaultDue = new Date();
+            const defaultDue = now();
             defaultDue.setDate(defaultDue.getDate() + 1);
             defaultDue.setHours(23, 59, 0, 0);
             fields.title.value = task?.title ?? '';

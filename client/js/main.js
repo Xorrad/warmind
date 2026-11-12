@@ -17,6 +17,7 @@ import { renderVersion, renderPoints, setupPointsPopover } from './ui/topbar.js'
 import { renderTasks, setupPanelToggles } from './ui/tasks.js';
 import { createTaskDialog } from './ui/modals.js';
 import { store, session } from './store.js';
+import { now as clockNow, canSkip, skipDays, skippedDays } from './clock.js';
 import { createTask, updateTask, toggleDone, isDoneToday } from '/engine/tasks.js';
 import { settleDays, estimateToday, completionGains } from '/engine/tick.js';
 
@@ -86,12 +87,12 @@ const newId = () => globalThis.crypto?.randomUUID?.() ?? `${Date.now().toString(
 const setTasks = (fn) => store.update((s) => ({ ...s, tasks: fn(s.tasks) }));
 
 const taskDialog = createTaskDialog(document.getElementById('task-dialog'), (fields, id) => {
-    const now = new Date();
+    const now = clockNow();
     setTasks((tasks) => (id ? tasks.map((t) => (t.id === id ? updateTask(t, fields) : t)) : [...tasks, createTask(fields, { id: newId(), now })]));
 });
 
 const taskCallbacks = {
-    onToggle: (id) => setTasks((tasks) => tasks.map((t) => (t.id === id ? toggleDone(t, new Date()) : t))),
+    onToggle: (id) => setTasks((tasks) => tasks.map((t) => (t.id === id ? toggleDone(t, clockNow()) : t))),
     onEdit: (id) => taskDialog.open(store.get().tasks.find((t) => t.id === id)),
     onDelete: (id) => {
         const task = store.get().tasks.find((t) => t.id === id);
@@ -113,7 +114,7 @@ const dispatch = createDispatchDialog(document.getElementById('dispatch-dialog')
 function settle() {
     if (!map) return;
     const { tasks, ledger, campaign } = store.get();
-    const result = settleDays(ledger, tasks, { provincesOwned: provincesOwned(), now: new Date() });
+    const result = settleDays(ledger, tasks, { provincesOwned: provincesOwned(), now: clockNow() });
     if (result.ledger.settledThrough === ledger.settledThrough) return;
     const before = map;
     const enemy = campaign && result.granted.length ? playDays(campaign, baseMap, result.granted.map((g) => g.day)) : { campaign, reports: [] };
@@ -145,7 +146,7 @@ function settle() {
 }
 
 function renderAll() {
-    const now = new Date();
+    const now = clockNow();
     const { tasks, ledger } = store.get();
     if (!map) return;
     const context = { provincesOwned: provincesOwned(), now };
@@ -187,6 +188,23 @@ if (session) {
         e.preventDefault();
         location.href = link((p) => p.delete('session'));
     });
+    // Time skipping: settle the day, let the enemies play, show the dispatch
+    const dateEl = badge.querySelector('[data-session-date]');
+    const showDate = () => {
+        const days = skippedDays();
+        dateEl.textContent = `${clockNow().toLocaleDateString([], { weekday: 'short', day: 'numeric', month: 'short' })}${days ? ` (+${days} d)` : ''}`;
+        dateEl.title = days ? `Clock moved ${days} day${days > 1 ? 's' : ''} ahead of real time` : 'Real date';
+    };
+    const skip = badge.querySelector('[data-session-skip]');
+    skip.hidden = !canSkip;
+    skip.addEventListener('click', () => {
+        skipDays(1);
+        showDate();
+        settle();
+        renderAll();
+        game.refresh();
+    });
+    showDate();
     badge.hidden = false;
 }
 

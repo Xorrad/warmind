@@ -4,6 +4,7 @@
 
 import { POINTS } from '/engine/config.js';
 import { h } from './dom.js';
+import { now } from '../clock.js';
 
 import { getBuild } from '../api.js';
 
@@ -64,7 +65,7 @@ export function setupPointsPopover(el) {
 /** "today 21:30" for today, "Tue 19:00" otherwise. */
 function shortDue(date) {
     const time = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    return date.toDateString() === new Date().toDateString() ? `today ${time}` : `${date.toLocaleDateString([], { weekday: 'short' })} ${time}`;
+    return date.toDateString() === now().toDateString() ? `today ${time}` : `${date.toLocaleDateString([], { weekday: 'short' })} ${time}`;
 }
 
 const fmt = (n) => (Number.isInteger(n) ? String(n) : n.toFixed(1));

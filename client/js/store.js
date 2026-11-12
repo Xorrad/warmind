@@ -4,35 +4,20 @@
  * Tasks, the points ledger and the campaign (units) are saved in
  * localStorage for now; the campaign API replaces this once accounts exist.
  *
- * Test sessions: `?session=<name>` keeps its data under separate keys, so
- * the real data is never touched. The "demo" session is filled with
- * generated tasks the first time (or again with `&reset`); any other name
- * starts empty.
+ * Test sessions (see session.js) keep their data under separate keys. The
+ * "demo" session is filled with generated tasks the first time (or again
+ * after a reset); any other name starts empty.
  */
 
 import { generateDemoData } from '/engine/demo.js';
+import { session, prefix } from './session.js';
+import { now } from './clock.js';
 
-const params = new URLSearchParams(location.search);
-/** Name of the test session, or null for the real data. */
-export const session = params.get('session')?.replace(/[^\w-]/g, '') || null;
+export { session };
 
-const prefix = session ? `warmind.session.${session}.` : 'warmind.';
 const TASKS_KEY = `${prefix}tasks.v1`;
 const LEDGER_KEY = `${prefix}ledger.v1`;
 const CAMPAIGN_KEY = `${prefix}campaign.v1`;
-
-if (session && params.has('reset')) {
-    try {
-        localStorage.removeItem(TASKS_KEY);
-        localStorage.removeItem(LEDGER_KEY);
-        localStorage.removeItem(CAMPAIGN_KEY);
-    } catch {
-        // Nothing stored anyway
-    }
-    // Drop "reset" so reloading the page does not wipe the session again
-    params.delete('reset');
-    history.replaceState(null, '', `${location.pathname}?${params}`);
-}
 
 /**
  * @template T
@@ -99,7 +84,7 @@ function loadCampaign() {
 
 function initialState() {
     if (session === 'demo' && load(TASKS_KEY, null) === null) {
-        return { ...generateDemoData({ now: new Date() }), campaign: null };
+        return { ...generateDemoData({ now: now() }), campaign: null };
     }
     return { tasks: loadTasks(), ledger: loadLedger(), campaign: loadCampaign() };
 }
