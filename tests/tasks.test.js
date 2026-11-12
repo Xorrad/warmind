@@ -12,6 +12,7 @@ import {
     shiftDay,
 } from '../engine/tasks.js';
 import { computeDailyPoints, urgency } from '../engine/points.js';
+import { settleDays, estimateToday, endOfDay } from '../engine/tick.js';
 import { POINTS } from '../engine/config.js';
 
 // Fixed local "now": 12 Nov 2026, 10:00
@@ -172,5 +173,56 @@ describe('computeDailyPoints as of a past moment', () => {
     it('treats tasks completed later as unfinished', () => {
         const t = { ...oneOff({ dueAt: inDays(-0.5) }), completedAt: inDays(1) };
         expect(computeDailyPoints([t], { provincesOwned, now }).total).toBe(0);
+    });
+});
+
+describe('settleDays', () => {
+    const provincesOwned = 10;
+    const base = Math.round(POINTS.base + POINTS.perProvince * provincesOwned);
+
+    it('starts a new campaign without back-pay', () => {
+        const { ledger, granted } = settleDays({ balance: 0, settledThrough: null }, [], { provincesOwned, now });
+        expect(ledger).toEqual({ balance: 0, settledThrough: '2026-11-11' });
+        expect(granted).toEqual([]);
+    });
+
+    it('grants each ended day once', () => {
+        const start = { balance: 3, settledThrough: '2026-11-09' };
+        const { ledger, granted } = settleDays(start, [], { provincesOwned, now });
+        expect(granted.map((g) => g.day)).toEqual(['2026-11-10', '2026-11-11']);
+        expect(ledger).toEqual({ balance: 3 + 2 * base, settledThrough: '2026-11-11' });
+        expect(settleDays(ledger, [], { provincesOwned, now }).granted).toEqual([]);
+    });
+
+    it('judges each day on the tasks as they were at its end', () => {
+        // Created on the 9th, due on the 10th at noon, completed today (the 12th)
+        const t = {
+            ...createTask({ title: 'Lab', severity: 3, recurring: false, dueAt: new Date(2026, 10, 10, 12).toISOString() }, { id: 'lab', now: new Date(2026, 10, 9, 9) }),
+            completedAt: now.toISOString(),
+        };
+        const { granted } = settleDays({ balance: 0, settledThrough: '2026-11-08' }, [t], { provincesOwned, now });
+        const byDay = Object.fromEntries(granted.map((g) => [g.day, g.points]));
+        expect(byDay['2026-11-09']).toBeGreaterThan(0); // pending, not yet due
+        expect(byDay['2026-11-10']).toBe(0); // overdue at the end of the 10th
+        expect(byDay['2026-11-11']).toBe(0);
+    });
+
+    it('rewards daily tasks done on the day itself', () => {
+        const run = { ...daily({ severity: 4 }), createdAt: new Date(2026, 10, 1).toISOString(), doneOn: ['2026-11-10'] };
+        const { granted } = settleDays({ balance: 0, settledThrough: '2026-11-09' }, [run], { provincesOwned, now });
+        expect(granted[0].points).toBe(base + POINTS.completionBonus);
+        expect(granted[1].points).toBe(base - 4);
+    });
+});
+
+describe('estimateToday', () => {
+    it('counts a task due later today as overdue if left unfinished', () => {
+        const dueTonight = oneOff({ dueAt: new Date(2026, 10, 12, 20).toISOString() });
+        expect(estimateToday([dueTonight], { provincesOwned: 10, now }).total).toBe(0);
+        expect(estimateToday([toggleDone(dueTonight, now)], { provincesOwned: 10, now }).total).toBeGreaterThan(0);
+    });
+
+    it('evaluates at the very end of the day', () => {
+        expect(endOfDay('2026-11-12').getTime()).toBe(new Date(2026, 10, 13).getTime() - 1);
     });
 });
