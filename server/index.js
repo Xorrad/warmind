@@ -1,24 +1,35 @@
 /**
- * @file Express app: static client, API routes.
+ * @file Entry point: reads the environment, opens the database, listens.
+ *
+ * Environment (see .env.example): PORT, DB_PATH, SESSION_SECRET,
+ * NODE_ENV=production (secure cookies), TRUST_PROXY=1 (behind a reverse
+ * proxy, for client IPs and secure cookies).
  */
 
-import express from 'express';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import crypto from 'node:crypto';
 import { BUILD } from './build.js';
+import { openDb } from './db.js';
+import { createApp } from './app.js';
 
-const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const app = express();
+const production = process.env.NODE_ENV === 'production';
+let secret = process.env.SESSION_SECRET;
+if (!secret) {
+    if (production) {
+        console.error('SESSION_SECRET is required in production.');
+        process.exit(1);
+    }
+    // Development: random each start (logins do not survive a restart)
+    secret = crypto.randomBytes(32).toString('hex');
+    console.warn('SESSION_SECRET not set: using a random one (sessions end on restart).');
+}
 
-// Front-end files
-app.use(express.static(path.join(root, 'client')));
-// The game engine is shared: the browser imports it directly
-app.use('/engine', express.static(path.join(root, 'engine')));
-// Browser-side dependencies (mapped in index.html's import map)
-app.use('/vendor/d3-delaunay', express.static(path.join(root, 'node_modules/d3-delaunay/dist')));
-
-// Build version shown next to the logo
-app.get('/api/build', (req, res) => res.json(BUILD));
+const db = openDb(process.env.DB_PATH || 'data/warmind.db');
+const app = createApp({
+    db,
+    secret,
+    secureCookies: production,
+    trustProxy: process.env.TRUST_PROXY === '1',
+});
 
 const port = Number(process.env.PORT) || 3000;
 app.listen(port, () => {

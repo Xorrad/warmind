@@ -4,3 +4,4 @@ node_modules/
 *.sqlite
 docs/api/
 .~lock.*
+data/
