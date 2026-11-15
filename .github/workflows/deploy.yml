@@ -1,0 +1,51 @@
+name: Deploy
+
+# Every push to main (and manual runs) goes to production, once the same
+# checks as the other workflows pass.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# One deploy at a time, in order
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run format:check
+      - run: npm test
+
+  deploy:
+    needs: checks
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://wallball.fun
+    steps:
+      # The server only lets this key run scripts/deploy.sh (forced command
+      # in its authorized_keys): the command sent here is ignored.
+      - name: Deploy over SSH
+        env:
+          SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+          TARGET: ${{ secrets.DEPLOY_TARGET }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+          ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes "$TARGET" deploy
+
+      - name: Check the live site
+        run: curl -fsS --retry 5 --retry-delay 5 --retry-all-errors https://wallball.fun/api/health
