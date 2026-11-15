@@ -273,7 +273,7 @@ document.querySelector('[data-user-name]').textContent = currentUser().username;
 document.querySelector('[data-logout]').addEventListener('click', async (e) => {
     e.currentTarget.disabled = true;
     await logout().catch(() => {});
-    location.replace('/login.html');
+    location.replace('/login/');
 });
 // Save indicator next to the user name
 const saveEl = document.querySelector('[data-save-status]');

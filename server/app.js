@@ -36,6 +36,31 @@ export const DEFAULTS = {
 };
 
 /**
+ * Page URLs without the file extension: client/login.html is served at
+ * /login/. The old forms (/login.html, /login) redirect there for good,
+ * keeping their query string; /index.html redirects to /.
+ * @param {string} dir Folder of the pages.
+ */
+export function cleanPageUrls(dir) {
+    const pages = new Set(
+        fs
+            .readdirSync(dir)
+            .filter((f) => f.endsWith('.html') && f !== 'index.html')
+            .map((f) => f.slice(0, -'.html'.length)),
+    );
+    return (req, res, next) => {
+        if (req.method !== 'GET' && req.method !== 'HEAD') return next();
+        const q = req.originalUrl.indexOf('?');
+        const query = q === -1 ? '' : req.originalUrl.slice(q);
+        if (req.path === '/index.html') return res.redirect(301, `/${query}`);
+        const match = /^\/([\w-]+)(\.html|\/)?$/.exec(req.path);
+        if (!match || !pages.has(match[1])) return next();
+        if (match[2] === '/') return res.sendFile(path.join(dir, `${match[1]}.html`));
+        return res.redirect(301, `/${match[1]}/${query}`);
+    };
+}
+
+/**
  * Content-Security-Policy: everything from this origin only. The one inline
  * script is index.html's import map, allowed by its hash; inline style
  * attributes (colour swatches, bars) need 'unsafe-inline' for styles.
@@ -82,8 +107,9 @@ export function createApp(options) {
         next();
     });
 
-    // Front-end files
-    app.use(express.static(path.join(root, 'client')));
+    // Front-end files, with clean page URLs
+    app.use(cleanPageUrls(path.join(root, 'client')));
+    app.use(express.static(path.join(root, 'client'), { index: 'index.html' }));
     // The game engine is shared: the browser imports it directly
     app.use('/engine', express.static(path.join(root, 'engine')));
     // Browser-side dependencies (mapped in index.html's import map)

@@ -142,7 +142,7 @@ function createRemoteSaver(startVersion, onFirstSave) {
                 return;
             }
             if (err.status === 401) {
-                location.replace(`/login.html?next=${encodeURIComponent(location.pathname + location.search)}`);
+                location.replace(`/login/?next=${encodeURIComponent(location.pathname + location.search)}`);
                 return;
             }
             // Network or server error: keep the data and try again later

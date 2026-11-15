@@ -25,6 +25,29 @@ describe('production readiness', () => {
         expect(res.headers.get('strict-transport-security')).toBeNull();
     });
 
+    it('serves pages without their extension and redirects the old URLs', async () => {
+        srv = await start();
+        const base = `http://127.0.0.1:${srv.port}`;
+        const get = (p) => fetch(base + p, { redirect: 'manual' });
+        const page = await get('/login/?next=%2F');
+        expect(page.status).toBe(200);
+        expect(await page.text()).toContain('<title>WarMind: Log in</title>');
+        for (const [from, to] of [
+            ['/login.html?next=%2F%3Fx%3D1', '/login/?next=%2F%3Fx%3D1'],
+            ['/login', '/login/'],
+            ['/login?mode=register', '/login/?mode=register'],
+            ['/index.html', '/'],
+            ['/index.html?a=b', '/?a=b'],
+        ]) {
+            const res = await get(from);
+            expect(res.status, from).toBe(301);
+            expect(res.headers.get('location'), from).toBe(to);
+        }
+        expect((await get('/')).status).toBe(200);
+        expect((await get('/css/base.css')).status).toBe(200);
+        expect((await get('/nope/')).status).toBe(404);
+    });
+
     it('marks every API answer as not cacheable', async () => {
         srv = await start();
         const c = srv.client();
