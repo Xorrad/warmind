@@ -1,6 +1,6 @@
 {
     "name": "warmind",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "description": "A motivational website made as a project for university.",
     "main": "server/index.js",
     "directories": {
