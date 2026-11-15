@@ -6,12 +6,12 @@
  * it again).
  */
 
-import { currentUser } from './user.js';
+import { currentUser, testSessionsAllowed } from './user.js';
 
 const params = new URLSearchParams(location.search);
 
-/** Name of the test session, or null for the real data. */
-export const session = params.get('session')?.replace(/[^\w-]/g, '') || null;
+/** Name of the test session, or null for the real data (always, when the server disables test sessions). */
+export const session = (testSessionsAllowed() && params.get('session')?.replace(/[^\w-]/g, '')) || null;
 
 const user = currentUser();
 if (!user) throw new Error('session.js needs the logged-in user (set by main.js).');

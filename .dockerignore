@@ -1,0 +1,16 @@
+# Only what the image needs: package files, client/, engine/, server/
+node_modules
+.git
+.github
+data
+docs
+tests
+coverage
+.env
+*.db
+*.db-*
+*.md
+.prettier*
+eslint.config.js
+Dockerfile
+.dockerignore

@@ -6,6 +6,8 @@
 import express from 'express';
 import session from 'express-session';
 import path from 'node:path';
+import fs from 'node:fs';
+import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { BUILD } from './build.js';
 import { createAuthRouter } from './auth.js';
@@ -29,7 +31,32 @@ export const DEFAULTS = {
         challenge: { windowMs: 15 * 60 * 1000, max: 60 },
     },
     lockout: { maxFailures: 5, windowMs: 15 * 60 * 1000, lockMs: 15 * 60 * 1000 },
+    /** Test sessions (?session=..., Skip day): dev tools, off in production unless asked for. */
+    testSessions: true,
 };
+
+/**
+ * Content-Security-Policy: everything from this origin only. The one inline
+ * script is index.html's import map, allowed by its hash; inline style
+ * attributes (colour swatches, bars) need 'unsafe-inline' for styles.
+ */
+export function contentSecurityPolicy() {
+    const html = fs.readFileSync(path.join(root, 'client/index.html'), 'utf8');
+    const hashes = [...html.matchAll(/<script type="importmap">([\s\S]*?)<\/script>/g)].map(
+        (m) => `'sha256-${crypto.createHash('sha256').update(m[1]).digest('base64')}'`,
+    );
+    return [
+        "default-src 'self'",
+        `script-src 'self' ${hashes.join(' ')}`.trim(),
+        "style-src 'self' 'unsafe-inline'",
+        "img-src 'self' data:",
+        "connect-src 'self'",
+        "object-src 'none'",
+        "base-uri 'self'",
+        "form-action 'self'",
+        "frame-ancestors 'none'",
+    ].join('; ');
+}
 
 /**
  * @param {{ db: ReturnType<typeof import('./db.js').openDb>, secret: string } & Partial<typeof DEFAULTS>} options
@@ -40,9 +67,18 @@ export function createApp(options) {
     app.disable('x-powered-by');
     if (o.trustProxy) app.set('trust proxy', 1);
 
-    // Basic hardening headers
+    // Hardening headers
+    const csp = contentSecurityPolicy();
     app.use((req, res, next) => {
-        res.set({ 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'X-Frame-Options': 'DENY' });
+        res.set({
+            'Content-Security-Policy': csp,
+            'X-Content-Type-Options': 'nosniff',
+            'Referrer-Policy': 'same-origin',
+            'X-Frame-Options': 'DENY',
+            'Cross-Origin-Opener-Policy': 'same-origin',
+        });
+        // HTTPS only from now on (production, where cookies are secure too)
+        if (o.secureCookies) res.set('Strict-Transport-Security', 'max-age=15552000; includeSubDomains');
         next();
     });
 
@@ -54,7 +90,17 @@ export function createApp(options) {
     app.use('/vendor/d3-delaunay', express.static(path.join(root, 'node_modules/d3-delaunay/dist')));
 
     // Build version shown next to the logo
-    app.get('/api/build', (req, res) => res.json(BUILD));
+    app.get('/api/build', (req, res) => res.json({ ...BUILD, testSessions: o.testSessions }));
+
+    // For the host's health checks: the process answers and the database too
+    app.get('/api/health', (req, res) => {
+        try {
+            o.db.raw.prepare('SELECT 1').get();
+            res.set('Cache-Control', 'no-store').json({ ok: true, version: BUILD.version, commit: BUILD.commit });
+        } catch {
+            res.status(503).json({ ok: false });
+        }
+    });
 
     // API: JSON bodies only. Browsers cannot send JSON across sites without
     // a CORS preflight, which this server never allows: no CSRF by form post.

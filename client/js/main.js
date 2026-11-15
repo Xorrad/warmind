@@ -6,14 +6,15 @@
  * its saved data is kept per user.
  */
 
-import { getMe } from './api.js';
-import { setUser } from './user.js';
+import { getMe, getBuild } from './api.js';
+import { setUser, setTestSessions } from './user.js';
 
-const user = await getMe().catch(() => null);
+const [user, build] = await Promise.all([getMe().catch(() => null), getBuild().catch(() => null)]);
 if (!user) {
     const back = location.pathname + location.search;
     location.replace(`/login.html?next=${encodeURIComponent(back)}`);
 } else {
     setUser(user);
+    setTestSessions(build?.testSessions);
     await import('./app.js');
 }
