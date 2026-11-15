@@ -25,6 +25,14 @@ describe('production readiness', () => {
         expect(res.headers.get('strict-transport-security')).toBeNull();
     });
 
+    it('marks every API answer as not cacheable', async () => {
+        srv = await start();
+        const c = srv.client();
+        for (const path of ['/api/build', '/api/health', '/api/auth/me', '/api/save', '/api/nope']) {
+            expect((await c.get(path)).headers.get('cache-control'), path).toBe('no-store');
+        }
+    });
+
     it('requires HTTPS (HSTS) when cookies are secure', async () => {
         srv = await start({ secureCookies: true });
         const res = await srv.client().get('/api/health');

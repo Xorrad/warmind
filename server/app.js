@@ -90,6 +90,13 @@ export function createApp(options) {
     app.use('/vendor/d3-delaunay', express.static(path.join(root, 'node_modules/d3-delaunay/dist')));
 
     // Build version shown next to the logo
+    // API answers are never cached: hosts often put a caching proxy in front
+    // (stale versions, or worse, someone else's data)
+    app.use('/api', (req, res, next) => {
+        res.set('Cache-Control', 'no-store');
+        next();
+    });
+
     app.get('/api/build', (req, res) => res.json({ ...BUILD, testSessions: o.testSessions }));
 
     // For the host's health checks: the process answers and the database too
