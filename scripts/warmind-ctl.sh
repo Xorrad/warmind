@@ -55,7 +55,9 @@ start() {
     local commit
     commit=$(git rev-parse --short HEAD 2>/dev/null || true)
     log "starting $commit"
-    BUILD_COMMIT=$commit nohup node --env-file-if-exists=.env server/index.js >>"$LOG_FILE" 2>&1 </dev/null &
+    # 9>&-: do not hand deploy.sh's lock (fd 9) down to the app, or the
+    # app would hold it for as long as it runs and block the next deploy
+    BUILD_COMMIT=$commit nohup node --env-file-if-exists=.env server/index.js >>"$LOG_FILE" 2>&1 </dev/null 9>&- &
     echo $! >"$PID_FILE"
     # Wait until it answers (or gives up)
     for _ in $(seq 1 30); do
