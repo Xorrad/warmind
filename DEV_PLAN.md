@@ -33,7 +33,7 @@
 | Map rendering | **SVG** (one `<path>` per province) | Native click/hover events, CSS styling, stays sharp at any zoom |
 | Map generation | **d3-delaunay** (Voronoi) + Lloyd relaxation + a seeded RNG | Produces the irregular "cells" from the mockup, and province adjacency comes from the Delaunay neighbours |
 | Back-end | **Node.js + Express** | Same language everywhere; small surface |
-| Database | **SQLite** (`better-sqlite3`) | No DB server; one file; enough for this project |
+| Database | **SQLite** (built into Node 24: `node:sqlite`) | No DB server; one file; enough for this project. Replaced `better-sqlite3`, whose prebuilt binary needs a newer glibc than the hosting server has |
 | Auth | Sessions (`express-session`) + **bcrypt** password hashing | Simplest secure option; avoids getting JWT wrong |
 | Tests | **Vitest** (or `node --test`) on the game engine | The engine is pure logic, so it's easy to test |
 | Docs | **JSDoc** comments → generated HTML docs | Answers the brief's question about generated vs. mixed documentation |

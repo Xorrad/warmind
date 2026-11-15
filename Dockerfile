@@ -3,10 +3,10 @@
 #   docker build --build-arg BUILD_COMMIT=$(git rev-parse --short HEAD) -t warmind .
 #   docker run -p 3000:3000 -v warmind-data:/data -e SESSION_SECRET=... warmind
 
-# --- Dependencies: production only; bcrypt and better-sqlite3 are native
+# --- Dependencies: production only; bcrypt is native (SQLite is built into Node)
 FROM node:24-bookworm-slim AS deps
 WORKDIR /app
-# Build tools, in case no prebuilt binary matches this platform
+# Build tools, in case bcrypt has no prebuilt binary for this platform
 RUN apt-get update \
     && apt-get install -y --no-install-recommends python3 make g++ \
     && rm -rf /var/lib/apt/lists/*

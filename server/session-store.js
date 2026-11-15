@@ -9,7 +9,7 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 
 export class SqliteSessionStore extends session.Store {
     /**
-     * @param {import('better-sqlite3').Database} db
+     * @param {import('node:sqlite').DatabaseSync} db
      * @param {{ pruneEveryMs?: number }} [options]
      */
     constructor(db, { pruneEveryMs = 60 * 60 * 1000 } = {}) {

@@ -1,11 +1,12 @@
 /**
  * @file SQLite schema and queries.
  *
- * One file (DB_PATH), opened with better-sqlite3. The schema is created on
- * start; queries are prepared once.
+ * One file (DB_PATH), opened with Node's built-in SQLite (node:sqlite): no
+ * native module to compile, so it runs wherever Node runs. The schema is
+ * created on start; queries are prepared once.
  */
 
-import Database from 'better-sqlite3';
+import { DatabaseSync } from 'node:sqlite';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -37,19 +38,43 @@ CREATE TABLE IF NOT EXISTS saves (
 /** Columns added after a table was first created: [table, column, definition]. */
 const ADDED_COLUMNS = [['saves', 'news', "TEXT NOT NULL DEFAULT '[]'"]];
 
+// SQLite extended result codes (error.errcode)
+const SQLITE_CONSTRAINT_UNIQUE = 2067;
+const SQLITE_CONSTRAINT_PRIMARYKEY = 1555;
+
 /**
  * Open (and create if needed) the database.
  * @param {string} file Path, or ':memory:'.
  */
 export function openDb(file) {
     if (file !== ':memory:') fs.mkdirSync(path.dirname(path.resolve(file)), { recursive: true });
-    const db = new Database(file);
-    db.pragma('journal_mode = WAL');
-    db.pragma('foreign_keys = ON');
+    const db = new DatabaseSync(file);
+    db.exec('PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON; PRAGMA busy_timeout = 5000;');
     db.exec(SCHEMA);
     for (const [table, column, definition] of ADDED_COLUMNS) {
         const exists = db.prepare(`SELECT 1 FROM pragma_table_info('${table}') WHERE name = ?`).get(column);
         if (!exists) db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
+    }
+
+    /**
+     * Run `fn` in a transaction: committed if it returns, rolled back if it
+     * throws. Nested calls use savepoints.
+     */
+    let depth = 0;
+    function transaction(fn) {
+        const savepoint = `sp${depth}`;
+        db.exec(depth === 0 ? 'BEGIN IMMEDIATE' : `SAVEPOINT ${savepoint}`);
+        depth++;
+        try {
+            const result = fn();
+            depth--;
+            db.exec(depth === 0 ? 'COMMIT' : `RELEASE ${savepoint}`);
+            return result;
+        } catch (err) {
+            depth--;
+            db.exec(depth === 0 ? 'ROLLBACK' : `ROLLBACK TO ${savepoint}; RELEASE ${savepoint}`);
+            throw err;
+        }
     }
 
     const q = {
@@ -79,7 +104,7 @@ export function openDb(file) {
             try {
                 return Number(q.insertUser.run(username, username.toLowerCase(), passwordHash).lastInsertRowid);
             } catch (err) {
-                if (err.code === 'SQLITE_CONSTRAINT_UNIQUE') return null;
+                if (err.errcode === SQLITE_CONSTRAINT_UNIQUE) return null;
                 throw err;
             }
         },
@@ -88,18 +113,19 @@ export function openDb(file) {
         /** Replace the pending settlement reports (JSON list). */
         setNews: (userId, json) => q.setNews.run(json, userId),
         /** Run `fn` in one transaction (read, compute, write). */
-        transaction: (fn) => db.transaction(fn)(),
+        transaction,
         /**
          * Store a user's save if `baseVersion` is the current one (0 when
          * there is none yet).
          * @returns {{ ok: true, version: number, updatedAt: string } | { ok: false }} Not ok on a version conflict.
          */
-        putSave: db.transaction((userId, json, baseVersion) => {
-            const done = baseVersion === 0 ? safeInsert(userId, json) : q.updateSave.run(json, userId, baseVersion).changes === 1;
-            if (!done) return { ok: false };
-            const row = q.getSave.get(userId);
-            return { ok: true, version: row.version, updatedAt: row.updatedAt };
-        }),
+        putSave: (userId, json, baseVersion) =>
+            transaction(() => {
+                const done = baseVersion === 0 ? safeInsert(userId, json) : q.updateSave.run(json, userId, baseVersion).changes === 1;
+                if (!done) return { ok: false };
+                const row = q.getSave.get(userId);
+                return { ok: true, version: row.version, updatedAt: row.updatedAt };
+            }),
         close: () => db.close(),
     };
 
@@ -109,7 +135,7 @@ export function openDb(file) {
             return true;
         } catch (err) {
             // Another request created it first: a conflict
-            if (err.code === 'SQLITE_CONSTRAINT_PRIMARYKEY') return false;
+            if (err.errcode === SQLITE_CONSTRAINT_PRIMARYKEY) return false;
             throw err;
         }
     }
