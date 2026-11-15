@@ -17,6 +17,7 @@ async function call(method, path, body) {
     if (!res.ok) {
         const err = new Error(data?.error ?? `${method} ${path} failed (${res.status})`);
         err.status = res.status;
+        err.body = data;
         throw err;
     }
     return data;
@@ -43,3 +44,20 @@ export const getChallenge = () => call('GET', '/api/auth/challenge');
 export const login = (fields) => call('POST', '/api/auth/login', fields).then((d) => d.user);
 export const register = (fields) => call('POST', '/api/auth/register', fields).then((d) => d.user);
 export const logout = () => call('POST', '/api/auth/logout', {});
+
+/** The saved game: { data, version, updatedAt } (data null when nothing is saved yet). */
+export const loadSave = () => call('GET', '/api/save');
+
+/**
+ * Save the game. `version` is the version the data is based on; a 409
+ * error (another device saved in between) carries the server's save in
+ * `err.body`.
+ * @returns {Promise<{ version: number, updatedAt: string }>}
+ */
+export const putSave = (data, version) => call('PUT', '/api/save', { data, version });
+
+/** Settle the days that ended (server clock), then return the save like loadSave(). */
+export const settleSave = () => call('POST', '/api/save/settle', {});
+
+/** The settlement reports up to `upTo` (a settlement id) were shown. */
+export const ackNews = (upTo) => call('POST', '/api/save/news/ack', { upTo });

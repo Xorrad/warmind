@@ -9,6 +9,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { BUILD } from './build.js';
 import { createAuthRouter } from './auth.js';
+import { createSaveRouter, MAX_SAVE_BYTES } from './routes/campaign.js';
 import { SqliteSessionStore } from './session-store.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -57,9 +58,12 @@ export function createApp(options) {
 
     // API: JSON bodies only. Browsers cannot send JSON across sites without
     // a CORS preflight, which this server never allows: no CSRF by form post.
+    // Saved games are larger than anything else the API receives
+    app.use('/api/save', express.json({ limit: MAX_SAVE_BYTES + 64 * 1024 }));
     app.use('/api', express.json({ limit: '20kb' }));
     app.use('/api', (req, res, next) => {
-        if (req.method === 'POST' && !req.is('application/json')) return res.status(415).json({ error: 'JSON expected.' });
+        const hasBody = ['POST', 'PUT', 'PATCH'].includes(req.method);
+        if (hasBody && !req.is('application/json')) return res.status(415).json({ error: 'JSON expected.' });
         next();
     });
 
@@ -79,6 +83,7 @@ export function createApp(options) {
 
     const auth = createAuthRouter(o.db, o);
     app.use('/api/auth', auth);
+    app.use('/api/save', createSaveRouter(o.db, { now: o.now }));
 
     app.use('/api', (req, res) => res.status(404).json({ error: 'Not found.' }));
     // eslint-disable-next-line no-unused-vars

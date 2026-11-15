@@ -41,14 +41,15 @@
                     <a data-session-exit href="#">Exit</a>
                 </div>
                 <span class="topbar-divider push" aria-hidden="true"></span>
-                <div class="dev-controls">
+                <div class="dev-controls" data-dev-only>
                     <label>Seed <input id="seed" type="text" spellcheck="false" /></label>
                     <button id="regenerate" type="button">Regenerate</button>
                     <button id="random" type="button">Random</button>
                     <button id="mode" type="button">Terrain view</button>
                 </div>
-                <span class="topbar-divider" aria-hidden="true"></span>
+                <span class="topbar-divider" aria-hidden="true" data-dev-only></span>
                 <div class="user-menu">
+                    <span class="save-status" data-save-status role="status" aria-live="polite"></span>
                     <span class="user-name" data-user-name></span>
                     <button type="button" class="logout" data-logout>Log out</button>
                 </div>

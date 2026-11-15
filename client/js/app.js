@@ -2,27 +2,28 @@
  * @file The app, loaded by main.js once the user is logged in: map,
  * tasks, units, daily settlement.
  *
- * Current state: map prototype plus the todo list (saved in localStorage).
- * The seed is read from the URL (?seed=...) so a given map can be shared
- * and reloaded.
+ * The game is saved on the server (store.js). Each campaign has its own
+ * map seed, saved with it. Test sessions (?session=...) stay in the
+ * browser and also accept a ?seed=... and the seed controls of the top
+ * bar, which would wipe a real campaign.
  */
 
 import { generateMap } from '/engine/mapgen.js';
-import { deployUnits, ownedMap, refreshMoves } from '/engine/units.js';
+import { deployUnits, ownedMap } from '/engine/units.js';
+import { settleGame } from '/engine/turn.js';
 import { createMapView } from './ui/map.js';
 import { createGameController } from './game.js';
 import { createBattleDialog } from './ui/battle.js';
 import { createDispatchDialog } from './ui/dispatch.js';
 import { currentUser } from './user.js';
-import { logout } from './api.js';
-import { playDays } from '/engine/ai.js';
+import { logout, ackNews } from './api.js';
 import { renderVersion, renderPoints, setupPointsPopover } from './ui/topbar.js';
 import { renderTasks, setupPanelToggles } from './ui/tasks.js';
 import { createTaskDialog } from './ui/modals.js';
-import { store, session } from './store.js';
+import { store, session, saveStatus, settledByServer, syncDay } from './store.js';
 import { now as clockNow, canSkip, skipDays, skippedDays } from './clock.js';
 import { createTask, updateTask, toggleDone, isDoneToday } from '/engine/tasks.js';
-import { settleDays, estimateToday, completionGains } from '/engine/tick.js';
+import { estimateToday, completionGains } from '/engine/tick.js';
 
 const seedInput = /** @type {HTMLInputElement} */ (document.getElementById('seed'));
 const modeButton = document.getElementById('mode');
@@ -58,9 +59,12 @@ const game = createGameController({
 
 function load(seed) {
     seedInput.value = seed;
-    const url = new URL(location.href);
-    url.searchParams.set('seed', seed);
-    history.replaceState(null, '', url);
+    if (session) {
+        // Test sessions: keep the seed in the URL so a map can be shared
+        const url = new URL(location.href);
+        url.searchParams.set('seed', seed);
+        history.replaceState(null, '', url);
+    }
 
     baseMap = generateMap({ seed });
     map = null;
@@ -112,37 +116,52 @@ function provincesOwned() {
 
 const dispatch = createDispatchDialog(document.getElementById('dispatch-dialog'));
 
+/** Settlement reports already shown on this page (by id). */
+const shownNews = new Set();
+let settling = false;
+
 /**
- * Settle every day that ended since the last visit: credit its points, then
- * let the enemy factions play their turn of that day. Shows a summary.
+ * Settle every day that ended: credit its points, let the enemy factions
+ * play, give units their moves back. The server does it for the real data
+ * (in the player's time zone); test sessions do it here, with their own
+ * clock. Then show what happened.
  */
-function settle() {
-    if (!map) return;
-    const { tasks, ledger, campaign } = store.get();
-    const result = settleDays(ledger, tasks, { provincesOwned: provincesOwned(), now: clockNow() });
-    if (result.ledger.settledThrough === ledger.settledThrough) return;
-    const before = map;
-    const enemy =
-        campaign && result.granted.length
-            ? playDays(
-                  campaign,
-                  baseMap,
-                  result.granted.map((g) => g.day),
-              )
-            : { campaign, reports: [] };
-    // A new day starts: every unit gets its move back
-    const today = enemy.campaign && result.granted.length ? refreshMoves(enemy.campaign) : enemy.campaign;
-    store.update((s) => ({ ...s, ledger: result.ledger, campaign: today }));
-    if (!result.granted.length) return;
-    // When the report closes: replay the day's attacks on the map, and show
-    // the province picked in the report, if any
-    const events = enemy.reports.map((r) => ({
+async function settle() {
+    if (!map || settling) return;
+    settling = true;
+    try {
+        let items;
+        if (settledByServer) {
+            items = await syncDay();
+            if (!items) return; // offline: try again at the next tick
+        } else {
+            const { state, settlement } = settleGame(store.get(), { now: clockNow(), map: baseMap });
+            if (state !== store.get()) store.update(() => state);
+            items = settlement ? [{ id: state.ledger.settledThrough, ...settlement }] : [];
+        }
+        const fresh = items.filter((n) => !shownNews.has(n.id));
+        if (fresh.length && !document.getElementById('dispatch-dialog').open) {
+            for (const n of fresh) shownNews.add(n.id);
+            showNews(fresh);
+        }
+    } finally {
+        settling = false;
+    }
+}
+
+/** The "While you were away" report, then the replay of the attacks on the map. */
+function showNews(items) {
+    const granted = items.flatMap((n) => n.granted);
+    const reports = items.flatMap((n) => n.reports);
+    const events = reports.map((r) => ({
         province: r.province,
         from: [...new Set(r.attackers.map((o) => o.before.province))],
         captured: r.captured,
-        color: before.factions[r.attackerFaction].color,
+        color: map.factions[r.attackerFaction].color,
     }));
-    dispatch.show(result.granted, enemy.reports, before, (focusId) => {
+    dispatch.show(granted, reports, map, (focusId) => {
+        // Shown: the server can forget these reports
+        if (settledByServer) ackNews(items.at(-1).id).catch(() => {});
         view.highlight(events);
         if (focusId !== null) view.focus(focusId);
         // The replay stays until the next click (anywhere) or Escape
@@ -256,4 +275,26 @@ document.querySelector('[data-logout]').addEventListener('click', async (e) => {
     await logout().catch(() => {});
     location.replace('/login.html');
 });
-load(new URLSearchParams(location.search).get('seed') || 'warmind');
+// Save indicator next to the user name
+const saveEl = document.querySelector('[data-save-status]');
+const SAVE_LABELS = {
+    saved: ['Saved', 'Your game is saved on the server.'],
+    saving: ['Saving…', 'Saving your game.'],
+    offline: ['Offline', 'Could not reach the server: your changes are kept and will be saved when it is back.'],
+    conflict: ['Reloading…', 'Your game was saved from another device: loading that version.'],
+    local: ['Test session', 'Test sessions are kept in this browser only.'],
+};
+saveStatus.subscribe((s) => {
+    const [label, title] = SAVE_LABELS[s];
+    saveEl.textContent = label;
+    saveEl.title = title;
+    saveEl.dataset.state = s;
+});
+
+// Seed controls: test sessions only (they would start a new campaign)
+for (const el of document.querySelectorAll('[data-dev-only]')) el.hidden = !session;
+
+// The campaign's own seed; a new campaign gets a random one
+const randomSeed = () => Math.random().toString(36).slice(2, 8);
+const savedSeed = store.get().campaign?.seed;
+load(session ? new URLSearchParams(location.search).get('seed') || savedSeed || 'warmind' : savedSeed || randomSeed());

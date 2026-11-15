@@ -336,6 +336,31 @@
     font-size: 0.9rem;
 }
 
+.save-status {
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    background: var(--bg);
+}
+
+.save-status[data-state='saved']::before {
+    content: '✓ ';
+    color: var(--success);
+}
+
+.save-status[data-state='offline'],
+.save-status[data-state='conflict'] {
+    color: var(--warning);
+    background: var(--warning-bg);
+}
+
+.save-status[data-state='local'] {
+    color: #6b3f06;
+    background: #fbe7c6;
+}
+
 .user-name {
     font-weight: 700;
 }
