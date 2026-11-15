@@ -162,7 +162,7 @@ function createRemoteSaver(startVersion, onFirstSave) {
         const body = JSON.stringify({ data: pending, version });
         if (body.length < 60_000) {
             fetch('/api/save', {
-                method: 'PUT',
+                method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body,
                 keepalive: true,

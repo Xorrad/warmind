@@ -47,6 +47,14 @@ describe('save API', () => {
     });
     afterEach(() => srv.close());
 
+    it('saves with POST too (hosting firewalls may block PUT)', async () => {
+        const first = await c.post('/api/save', { data: game(), version: 0 });
+        expect(first.status).toBe(200);
+        expect(first.body.version).toBe(1);
+        expect((await c.post('/api/save', { data: game(), version: 0 })).status).toBe(409);
+        expect((await srv.client().post('/api/save', { data: game(), version: 0 })).status).toBe(401);
+    });
+
     it('needs a login', async () => {
         const anon = srv.client();
         expect((await anon.get('/api/save')).status).toBe(401);

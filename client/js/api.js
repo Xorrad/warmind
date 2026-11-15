@@ -54,7 +54,8 @@ export const loadSave = () => call('GET', '/api/save');
  * `err.body`.
  * @returns {Promise<{ version: number, updatedAt: string }>}
  */
-export const putSave = (data, version) => call('PUT', '/api/save', { data, version });
+// POST, not PUT: some hosting firewalls block PUT before it reaches the app
+export const putSave = (data, version) => call('POST', '/api/save', { data, version });
 
 /** Settle the days that ended (server clock), then return the save like loadSave(). */
 export const settleSave = () => call('POST', '/api/save/settle', {});

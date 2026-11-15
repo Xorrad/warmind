@@ -4,7 +4,9 @@
  *
  *   GET  /api/save              settle, then { data, version, updatedAt, news }
  *   POST /api/save/settle       same (the app calls it every minute)
- *   PUT  /api/save              { data, version } -> { version, updatedAt }
+ *   POST /api/save              { data, version } -> { version, updatedAt }
+ *                               (PUT is accepted too; the app uses POST: some
+ *                               hosting firewalls only let GET and POST through)
  *   POST /api/save/news/ack     { upTo } -> remove the reports shown
  *
  * `version` is the version the client's data is based on (0 for the first
@@ -121,7 +123,7 @@ export function createSaveRouter(db, { now = () => new Date() } = {}) {
     router.get('/', settled);
     router.post('/settle', settled);
 
-    router.put('/', (req, res) => {
+    const store = (req, res) => {
         const { data, version } = req.body ?? {};
         if (!Number.isSafeInteger(version) || version < 0) return res.status(400).json({ error: 'version must be a whole number.' });
         const invalid = validateSave(data);
@@ -133,7 +135,9 @@ export function createSaveRouter(db, { now = () => new Date() } = {}) {
         if (!result.ok)
             return res.status(409).json({ error: 'Your game was saved elsewhere in the meantime.', ...view(db.getSave(req.user.id)) });
         res.json({ version: result.version, updatedAt: result.updatedAt });
-    });
+    };
+    router.post('/', store);
+    router.put('/', store);
 
     // The app showed the reports up to this settlement: drop them
     router.post('/news/ack', (req, res) => {
