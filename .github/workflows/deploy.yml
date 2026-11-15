@@ -31,7 +31,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: production
-      url: https://wallball.fun
+      url: https://warmind.wallball.fun
     steps:
       # The server only lets this key run scripts/deploy.sh (forced command
       # in its authorized_keys): the command sent here is ignored.
@@ -48,4 +48,4 @@ jobs:
           ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes "$TARGET" deploy
 
       - name: Check the live site
-        run: curl -fsS --retry 5 --retry-delay 5 --retry-all-errors https://wallball.fun/api/health
+        run: curl -fsS --retry 5 --retry-delay 5 --retry-all-errors https://warmind.wallball.fun/api/health
