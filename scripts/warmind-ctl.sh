@@ -8,12 +8,13 @@
 #
 # Settings come from the app's .env (PORT, DB_PATH...). Paths:
 #   WARMIND_DIR   the app (default ~/warmind)
-#   WARMIND_DATA  pid file and logs (default ~/warmind-data)
+#   WARMIND_DATA  database, pid file and logs (default <app>/data,
+#                 ignored by git; keep it out of the website folder)
 #   NODE_BIN      folder of the node binary (default ~/opt/node/bin)
 set -uo pipefail
 
 APP_DIR=${WARMIND_DIR:-$HOME/warmind}
-DATA_DIR=${WARMIND_DATA:-$HOME/warmind-data}
+DATA_DIR=${WARMIND_DATA:-$APP_DIR/data}
 NODE_BIN=${NODE_BIN:-$HOME/opt/node/bin}
 PID_FILE=$DATA_DIR/warmind.pid
 LOG_DIR=$DATA_DIR/logs

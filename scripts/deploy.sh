@@ -12,7 +12,7 @@ set -euo pipefail
 
 main() {
     local app_dir=${WARMIND_DIR:-$HOME/warmind}
-    local data_dir=${WARMIND_DATA:-$HOME/warmind-data}
+    local data_dir=${WARMIND_DATA:-$app_dir/data}
     export PATH="${NODE_BIN:-$HOME/opt/node/bin}:$PATH"
     local ctl="$app_dir/scripts/warmind-ctl.sh"
 
