@@ -206,23 +206,25 @@ export function toggleDone(task, now) {
 
 /**
  * Split tasks into the three side panels, each sorted for display:
- *  - todo: unfinished one-off tasks, by due date (overdue ones come first);
+ *  - todo: unfinished one-off tasks, by due date (overdue ones come first),
+ *    then those completed today (they move on the next day);
  *  - streaks: every recurring task, those still to do today first;
- *  - completed: every completed one-off task, most recent first.
+ *  - completed: one-off tasks completed before today, most recent first.
  * @param {Task[]} tasks
  * @param {Date} now
  * @returns {{ todo: Task[], streaks: Task[], completed: Task[] }}
  */
 export function partitionTasks(tasks, now) {
     const byTitle = (a, b) => a.title.localeCompare(b.title);
+    // One-off tasks checked today stay in the todo list (below the open
+    // ones) until the next day, so a misclick is easy to undo
+    const doneFirst = (a, b) => Number(isDoneToday(a, now)) - Number(isDoneToday(b, now));
     const todo = tasks
-        .filter((t) => !t.recurring && t.completedAt === null)
-        .sort((a, b) => Date.parse(a.dueAt) - Date.parse(b.dueAt) || byTitle(a, b));
-    const streaks = tasks
-        .filter((t) => t.recurring)
-        .sort((a, b) => Number(isDoneToday(a, now)) - Number(isDoneToday(b, now)) || byTitle(a, b));
+        .filter((t) => !t.recurring && (t.completedAt === null || isDoneToday(t, now)))
+        .sort((a, b) => doneFirst(a, b) || Date.parse(a.dueAt) - Date.parse(b.dueAt) || byTitle(a, b));
+    const streaks = tasks.filter((t) => t.recurring).sort((a, b) => doneFirst(a, b) || byTitle(a, b));
     const completed = tasks
-        .filter((t) => !t.recurring && isCompleted(t, now))
+        .filter((t) => !t.recurring && isCompleted(t, now) && !isDoneToday(t, now))
         .sort((a, b) => Date.parse(b.completedAt) - Date.parse(a.completedAt) || byTitle(a, b));
     return { todo, streaks, completed };
 }

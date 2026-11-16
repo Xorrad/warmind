@@ -28,7 +28,11 @@ export function renderTasks(panels, tasks, now, gains, callbacks) {
     fill(panels.todo, todo, ctx, 'Nothing left to do. Add a task to earn points.');
     fill(panels.streaks, streaks, ctx, 'No daily task yet. Add habits you want to keep every day.');
     fillPaged(panels.completed, completed, ctx, 'Nothing completed yet.');
-    const counts = { todo: todo.length, streaks: streaks.filter((t) => !isDoneToday(t, now)).length, completed: completed.length };
+    const counts = {
+        todo: todo.filter((t) => !isDoneToday(t, now)).length,
+        streaks: streaks.filter((t) => !isDoneToday(t, now)).length,
+        completed: completed.length,
+    };
     for (const [name, n] of Object.entries(counts)) {
         const count = document.querySelector(`[data-count="${name}"]`);
         if (count) count.textContent = String(n);

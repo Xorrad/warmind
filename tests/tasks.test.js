@@ -110,9 +110,15 @@ describe('partitionTasks', () => {
         const cards = toggleDone(daily({ title: 'Cards' }), now);
 
         const { todo, streaks, completed } = partitionTasks([later, run, doneNow, soon, cards, late, doneBefore], now);
-        expect(todo.map((t) => t.title)).toEqual(['Late', 'Soon', 'Later']);
+        // Done today: stays in the todo list, at the end, until tomorrow
+        expect(todo.map((t) => t.title)).toEqual(['Late', 'Soon', 'Later', 'Done']);
         expect(streaks.map((t) => t.title)).toEqual(['Run', 'Cards']);
-        expect(completed.map((t) => t.title)).toEqual(['Done', 'Old']);
+        expect(completed.map((t) => t.title)).toEqual(['Old']);
+
+        const tomorrow = new Date(now.getTime() + 24 * 3600 * 1000);
+        const next = partitionTasks([later, doneNow, doneBefore], tomorrow);
+        expect(next.todo.map((t) => t.title)).toEqual(['Later']);
+        expect(next.completed.map((t) => t.title)).toEqual(['Done', 'Old']);
     });
 });
 
