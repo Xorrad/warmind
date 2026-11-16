@@ -41,6 +41,11 @@
                     <a data-session-exit href="#">Exit</a>
                 </div>
                 <span class="topbar-divider push" aria-hidden="true"></span>
+                <div class="campaign-date" aria-live="polite">
+                    <small>Campaign turn <strong data-campaign-turn>1</strong></small>
+                    <time data-campaign-date></time>
+                </div>
+                <span class="topbar-divider" aria-hidden="true"></span>
                 <div class="dev-controls" data-dev-only>
                     <label>Seed <input id="seed" type="text" spellcheck="false" /></label>
                     <button id="regenerate" type="button">Regenerate</button>
@@ -160,8 +165,7 @@
                 <main class="map-area">
                     <div id="map" class="map"></div>
                     <aside id="province-info" class="province-info" hidden></aside>
-                    <div class="action-bar" id="action-bar" aria-label="Unit actions"></div>
-                    <p class="toast" id="toast" role="status" aria-live="polite" hidden></p>
+                    <div class="notices" id="notices" role="status" aria-live="polite"></div>
                 </main>
             </div>
 
@@ -226,6 +230,17 @@
                     <button type="button" class="primary" data-dispatch-close>Continue</button>
                 </div>
             </div>
+        </dialog>
+
+        <dialog class="modal confirm" id="confirm-dialog" aria-labelledby="confirm-dialog-title" aria-describedby="confirm-dialog-message">
+            <form method="dialog">
+                <h2 id="confirm-dialog-title" data-confirm-title>Are you sure?</h2>
+                <p id="confirm-dialog-message" data-confirm-message></p>
+                <div class="modal-actions">
+                    <button type="submit" value="cancel" class="secondary" data-confirm-cancel>Cancel</button>
+                    <button type="submit" value="confirm" class="primary danger" data-confirm-ok>Confirm</button>
+                </div>
+            </form>
         </dialog>
 
         <script type="module" src="/js/main.js"></script>

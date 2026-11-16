@@ -35,7 +35,7 @@
 }
 
 .province.terrain-sea {
-    stroke: #5d86a8;
+    stroke: #6f8d8a;
     stroke-width: 1;
 }
 
@@ -44,12 +44,12 @@
 }
 
 .province.selected {
-    stroke: #fff;
+    stroke: var(--paper-light);
     stroke-width: 4;
 }
 
 .capital-marker {
-    fill: #fff;
+    fill: var(--paper-light);
     stroke: var(--map-stroke);
     stroke-width: 2;
     pointer-events: none;
@@ -58,11 +58,11 @@
 .province-label {
     font-size: 15px;
     font-weight: 600;
-    fill: #1d232b;
+    fill: var(--ink);
     text-anchor: middle;
     pointer-events: none;
     paint-order: stroke;
-    stroke: rgba(255, 255, 255, 0.7);
+    stroke: rgba(243, 233, 207, 0.85);
     stroke-width: 3px;
 }
 
@@ -71,7 +71,7 @@
 .province-info {
     position: absolute;
     top: 12px;
-    left: 12px;
+    right: 12px;
     min-width: 200px;
     max-width: min(320px, calc(100% - 24px));
     max-height: calc(100% - 120px);
@@ -80,7 +80,7 @@
     background: var(--surface);
     border: 2px solid var(--border);
     border-radius: var(--radius);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 4px 12px rgba(var(--shadow), 0.3);
 }
 
 .province-info h2 {
@@ -196,19 +196,9 @@
     background: var(--surface);
     border: 2px solid var(--border);
     border-radius: var(--radius);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 8px 24px rgba(var(--shadow), 0.3);
     font-size: 0.85rem;
     cursor: default;
-}
-
-.points-popover::before {
-    content: '';
-    position: absolute;
-    top: -8px;
-    left: var(--arrow-left, 24px);
-    border: 7px solid transparent;
-    border-top: 0;
-    border-bottom-color: var(--border);
 }
 
 .points:hover .points-popover,
@@ -276,7 +266,7 @@
 .pp-row.total {
     margin-top: 4px;
     padding-top: 6px;
-    border-top: 1px solid #c3cad3;
+    border-top: 1px solid var(--rule-soft);
     font-weight: 700;
 }
 
@@ -317,10 +307,10 @@
     align-items: center;
     gap: 10px;
     padding: 4px 12px;
-    border: 2px dashed #a0661a;
+    border: 2px dashed var(--stamp-red);
     border-radius: 999px;
-    background: #fbe7c6;
-    color: #6b3f06;
+    background: var(--danger-bg);
+    color: var(--stamp-red);
     font-size: 0.85rem;
 }
 
@@ -357,8 +347,8 @@
 }
 
 .save-status[data-state='local'] {
-    color: #6b3f06;
-    background: #fbe7c6;
+    color: var(--stamp-red);
+    background: var(--danger-bg);
 }
 
 .user-name {
@@ -388,9 +378,9 @@
 
 .session-skip {
     padding: 2px 10px;
-    border: 1px solid #a0661a;
+    border: 1px solid var(--stamp-red);
     border-radius: 999px;
-    background: #fff7ea;
+    background: var(--paper-light);
     color: inherit;
     font-size: 0.8rem;
     font-weight: 700;
@@ -398,7 +388,7 @@
 }
 
 .session-skip:hover {
-    background: #fff;
+    background: var(--paper);
 }
 
 /* ---------- Task panels ---------- */
@@ -550,7 +540,7 @@
     margin-left: 4px;
     border-radius: 999px;
     background: var(--border);
-    color: #fff;
+    color: var(--on-accent);
     font-size: 0.75rem;
     text-align: center;
     vertical-align: middle;
@@ -586,8 +576,8 @@
     padding: 7px 8px;
     margin-top: 6px;
     background: var(--surface);
-    border: 1px solid #c3cad3;
-    border-left: 4px solid #c3cad3;
+    border: 1px solid var(--rule-soft);
+    border-left: 4px solid var(--rule-soft);
     border-radius: 6px;
 }
 
@@ -636,7 +626,6 @@
 }
 
 .task.done .task-title {
-    text-decoration: line-through;
     color: var(--text-muted);
 }
 
@@ -661,7 +650,7 @@
 .gain-badge {
     padding: 1px 8px;
     border-radius: 999px;
-    background: #e3efdc;
+    background: var(--success-bg);
     color: var(--success);
     font-size: 0.8rem;
     font-weight: 700;
@@ -675,7 +664,7 @@
 
 .task.overdue .gain-badge:not(.zero) {
     background: var(--success);
-    color: #fff;
+    color: var(--on-accent);
 }
 
 .streak-badge {
@@ -690,8 +679,8 @@
 }
 
 .streak-badge.kept {
-    background: #fbe7c6;
-    color: #8a4b08;
+    background: var(--warning-bg);
+    color: var(--warning);
 }
 
 .streak-badge.at-risk {
@@ -747,11 +736,11 @@
     border-radius: var(--radius);
     background: var(--surface);
     color: var(--text);
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
+    box-shadow: 0 12px 32px rgba(var(--shadow), 0.35);
 }
 
 .modal::backdrop {
-    background: rgba(20, 25, 32, 0.45);
+    background: rgba(45, 30, 15, 0.5);
 }
 
 .modal form {
@@ -851,7 +840,7 @@
 .modal-actions .primary {
     background: var(--accent);
     border-color: var(--accent);
-    color: #fff;
+    color: var(--on-accent);
     font-weight: 600;
 }
 
@@ -866,13 +855,13 @@
 }
 
 .unit-box {
-    stroke: #fff;
+    stroke: var(--ink);
     stroke-width: 2;
-    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.45));
+    filter: drop-shadow(0 1px 2px rgba(var(--shadow), 0.45));
 }
 
 .unit-size {
-    fill: #fff;
+    fill: var(--paper-light);
     font-size: 11px;
     font-weight: 800;
     text-anchor: middle;
@@ -880,15 +869,15 @@
 }
 
 .unit-bar-bg {
-    fill: rgba(0, 0, 0, 0.45);
+    fill: rgba(42, 33, 24, 0.55);
 }
 
 .unit-bar {
-    fill: #fff;
+    fill: var(--paper-light);
 }
 
 .unit.spent .unit-box {
-    filter: saturate(0.45) brightness(0.9) drop-shadow(0 1px 2px rgba(0, 0, 0, 0.45));
+    filter: saturate(0.45) brightness(0.9) drop-shadow(0 1px 2px rgba(var(--shadow), 0.45));
 }
 
 .unit.spent .unit-size {
@@ -896,17 +885,17 @@
 }
 
 .unit:hover .unit-box {
-    stroke: #ffe58a;
+    stroke: var(--highlight);
 }
 
 .unit.selected .unit-box {
-    stroke: #ffd23f;
+    stroke: var(--stamp-red);
     stroke-width: 3.5;
 }
 
 /* Merge candidates pulse until one is picked */
 .unit.candidate .unit-box {
-    stroke: #ffd23f;
+    stroke: var(--stamp-red);
     stroke-dasharray: 4 3;
     animation: candidate 0.8s linear infinite;
 }
@@ -925,47 +914,47 @@
 
 /* Provinces the selected unit can move to */
 .province.move-target {
-    stroke: #ffd23f;
+    stroke: var(--ink);
     stroke-width: 3;
     stroke-dasharray: 6 4;
     filter: brightness(1.15);
 }
 
 .province.move-target.unaffordable {
-    stroke: #9aa3ad;
+    stroke: #9a8b72;
     filter: saturate(0.6);
 }
 
 /* Enemy provinces the selected unit can attack */
 .province.attack-target {
-    stroke: #ff5a4e;
+    stroke: var(--stamp-red);
     stroke-width: 3;
     stroke-dasharray: 6 4;
 }
 
 .province.attack-target.unaffordable {
-    stroke: #9aa3ad;
+    stroke: #9a8b72;
 }
 
 .target-label {
     font-size: 12px;
     font-weight: 800;
-    fill: #1d232b;
+    fill: var(--paper-light);
     text-anchor: middle;
     paint-order: stroke;
-    stroke: #ffd23f;
+    stroke: var(--ink);
     stroke-width: 4px;
     pointer-events: none;
 }
 
 .target-label.attack {
-    fill: #fff;
-    stroke: #c0392b;
+    fill: var(--paper-light);
+    stroke: var(--stamp-red);
 }
 
 .target-label.unaffordable {
-    stroke: #d5d9de;
-    fill: #5b6573;
+    stroke: var(--paper-dark);
+    fill: var(--ink-muted);
 }
 
 /* ---------- Unit list in the info card ---------- */
@@ -973,7 +962,7 @@
 .unit-list {
     margin: 10px 0 0;
     padding: 8px 0 0;
-    border-top: 1px solid #c3cad3;
+    border-top: 1px solid var(--rule-soft);
     list-style: none;
 }
 
@@ -1026,7 +1015,7 @@
     width: 70px;
     height: 6px;
     border-radius: 3px;
-    background: #d5d9de;
+    background: var(--paper-dark);
     overflow: hidden;
 }
 
@@ -1047,7 +1036,7 @@
     background: var(--surface);
     border: 2px solid var(--border);
     border-radius: var(--radius);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 4px 12px rgba(var(--shadow), 0.3);
 }
 
 .action-unit {
@@ -1083,7 +1072,7 @@
 .action.active:hover:not(:disabled) {
     background: var(--accent);
     border-color: var(--accent);
-    color: #fff;
+    color: var(--on-accent);
 }
 
 .action:disabled {
@@ -1129,9 +1118,9 @@
     padding: 8px 14px;
     border-radius: 999px;
     background: var(--border);
-    color: #fff;
+    color: var(--on-accent);
     font-size: 0.9rem;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 4px 12px rgba(var(--shadow), 0.3);
 }
 
 .toast.success {
@@ -1207,7 +1196,7 @@
 
 .battle-side {
     padding: 10px 12px;
-    border: 1px solid #c3cad3;
+    border: 1px solid var(--rule-soft);
     border-radius: 6px;
     font-size: 0.85rem;
 }
@@ -1253,7 +1242,7 @@
 }
 
 .battle-odds.good {
-    background: #e3efdc;
+    background: var(--success-bg);
     color: var(--success);
 }
 
@@ -1281,7 +1270,7 @@
 }
 
 .battle-result.won {
-    background: #e3efdc;
+    background: var(--success-bg);
     color: var(--success);
 }
 
@@ -1299,7 +1288,7 @@
 .battle-table th,
 .battle-table td {
     padding: 5px 6px;
-    border-bottom: 1px solid #e0e4e9;
+    border-bottom: 1px solid var(--rule-soft);
     text-align: left;
 }
 
@@ -1360,7 +1349,7 @@
 .dispatch section + section {
     margin-top: 4px;
     padding-top: 10px;
-    border-top: 1px solid #e0e4e9;
+    border-top: 1px solid var(--rule-soft);
 }
 
 .dispatch h3 {
@@ -1414,7 +1403,7 @@
 
 /* Attacker's colour with a dark outline, readable over any territory */
 .attack-arrow {
-    filter: drop-shadow(0 0 1px #111) drop-shadow(0 0 1px #111) drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5));
+    filter: drop-shadow(0 0 1px var(--ink)) drop-shadow(0 0 1px var(--ink)) drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5));
 }
 
 .attack-arrow line {
@@ -1435,7 +1424,7 @@
 
 /* Blinks until the next click */
 .province.flash-captured {
-    stroke: #fff;
+    stroke: var(--paper-light);
     stroke-width: 3;
     animation: flash-captured 0.9s ease-in-out infinite;
 }
@@ -1447,13 +1436,13 @@
 }
 
 .province.flash-held {
-    stroke: #ff5a4e;
+    stroke: var(--stamp-red);
     stroke-width: 3;
     stroke-dasharray: 5 3;
 }
 
 .province.focus-pulse {
-    stroke: #ffd23f;
+    stroke: var(--highlight);
     stroke-width: 5;
     animation: focus-pulse 0.6s ease-in-out 4;
 }
@@ -1495,4 +1484,884 @@
 .dispatch .place:focus-visible {
     color: var(--accent);
     text-decoration-style: solid;
+}
+
+/* ======================================================================
+   Paper theme: a 1930s general staff desk
+   Sheets of torn paper (see .sheet in base.css), typed text, red stamps.
+   Tint a sheet with --sheet.
+   ====================================================================== */
+
+/* ---------- Typography ---------- */
+
+h1,
+h2,
+h3,
+.panel-head h2,
+.modal h2,
+.modal-body h2,
+.province-info h2,
+.action-label,
+.pp-section,
+.battle-table th,
+.dispatch h3 {
+    font-family: var(--font-display);
+    letter-spacing: 0.08em;
+}
+
+.modal h2,
+.modal-body h2,
+.province-info h2 {
+    text-transform: uppercase;
+    font-weight: 600;
+}
+
+/* ---------- Buttons: hand-cut paper chips ---------- */
+
+.add,
+.icon-btn,
+.logout,
+.dev-controls button,
+.shortcuts button,
+.modal-actions button,
+.session-skip,
+.view-toggle,
+.action {
+    --sheet: var(--paper-light);
+    border: 0;
+    font-family: var(--font-display);
+    font-size: 0.82rem;
+    font-weight: 500;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--ink);
+    transition: transform 0.08s;
+}
+
+.add:hover,
+.logout:hover,
+.dev-controls button:hover,
+.shortcuts button:hover,
+.modal-actions .secondary:hover,
+.action:hover:not(:disabled) {
+    --sheet: #efe3c6;
+}
+
+.add:active,
+.logout:active,
+.dev-controls button:active,
+.shortcuts button:active,
+.modal-actions button:active,
+.action:active:not(:disabled) {
+    transform: translate(1px, 1px);
+}
+
+/* Stamped (red) buttons */
+.modal-actions .primary,
+.auth-form button.primary,
+.view-toggle,
+.action.active,
+.action.active:hover:not(:disabled) {
+    --sheet: var(--stamp-red);
+    color: var(--on-accent);
+}
+
+.modal-actions .primary:hover,
+.auth-form button.primary:hover {
+    --sheet: #8a2219;
+}
+
+.modal-actions .primary.danger {
+    --sheet: #7d1c14;
+}
+
+/* Icon buttons stay bare marks until hovered */
+.icon-btn {
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+}
+
+.icon-btn:hover,
+.icon-btn[aria-pressed='true'] {
+    background: rgba(255, 248, 230, 0.55);
+}
+
+/* ---------- Inputs: typed on a form ---------- */
+
+.field input[type='text'],
+.field input[type='datetime-local'],
+.field select,
+.dev-controls input {
+    border: 0;
+    border-bottom: 1.5px solid var(--rule);
+    border-radius: 0;
+    background: rgba(255, 248, 230, 0.4);
+    font-family: var(--font);
+}
+
+.field input:focus-visible,
+.dev-controls input:focus-visible {
+    outline: none;
+    background: rgba(255, 248, 230, 0.75);
+    border-bottom-color: var(--stamp-red);
+}
+
+input[type='range'],
+input[type='checkbox'],
+input[type='radio'] {
+    accent-color: var(--stamp-red);
+}
+
+/* ---------- Top bar ---------- */
+
+.points {
+    --sheet: var(--paper-light);
+    border: 0;
+}
+
+.points strong {
+    font-family: var(--font-display);
+    font-size: 1.35rem;
+}
+
+.points-popover,
+.province-info,
+.action-bar {
+    --sheet: var(--paper-light);
+    border: 0;
+}
+
+/* The test session badge is a red ink stamp */
+.session-badge {
+    border: 2px solid var(--stamp-red);
+    border-radius: 3px;
+    background: transparent;
+    color: var(--stamp-red);
+    font-family: var(--font-display);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    transform: rotate(-1.5deg);
+    opacity: 0.9;
+}
+
+.session-skip {
+    --sheet: #ecdcb8;
+    color: var(--stamp-red);
+}
+
+.user-name {
+    font-family: var(--font-display);
+    letter-spacing: 0.05em;
+}
+
+.user-name::before {
+    content: '☭ ';
+    color: var(--stamp-red);
+}
+
+.save-status {
+    --sheet: #e2d0a8;
+    border: 0;
+    background: transparent;
+}
+
+/* ---------- Task panels: manila folders ----------
+   The folder's outline includes a tab around its title (see paper.js);
+   the buttons lie on the table beside the tab. */
+
+.panel {
+    --sheet: #dcc392;
+    border: 0;
+    overflow: visible;
+    /* Room for the shadow of the slips */
+    padding-bottom: 4px;
+}
+
+.panel-todo {
+    --sheet: #e0c897;
+}
+
+.panel-streaks {
+    --sheet: #d9bf8c;
+}
+
+.panel-completed {
+    --sheet: #d3b986;
+}
+
+.task-list {
+    padding: 4px 10px 10px;
+}
+
+.panel-head {
+    margin: 0;
+    padding: 0 2px 0 14px;
+    align-items: stretch;
+}
+
+/* The tab of the folder: part of the folder's outline, so no sheet of its own */
+.panel-head h2 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 16px 5px;
+    border: 0;
+    font-weight: 700;
+    font-size: 0.92rem;
+    letter-spacing: 0.12em;
+}
+
+/* The buttons sit in a second tab, typed on it like the title */
+.panel-actions {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    min-width: 0;
+    padding: 3px 3px 1px;
+}
+
+.panel-actions > * + * {
+    border-left: 1px solid rgba(110, 70, 25, 0.3) !important;
+}
+
+.panel-actions .add,
+.panel-actions .icon-btn {
+    height: 26px;
+    padding: 0 7px;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    color: var(--ink);
+    font-family: var(--font-display);
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+}
+
+.panel-actions .add {
+    color: var(--stamp-red);
+}
+
+.panel-actions .add:hover,
+.panel-actions .icon-btn:hover,
+.panel-actions .icon-btn[aria-pressed='true'] {
+    /* No background: it would spill over the slanted edges of the tab */
+    background: transparent;
+    color: var(--stamp-red);
+    text-decoration: underline 1.5px;
+    text-underline-offset: 3px;
+}
+
+.panel-actions .add:hover {
+    color: #6e1610;
+}
+
+.panel-actions .icon-btn svg {
+    width: 14px;
+    height: 14px;
+}
+
+/* Scored lines along the inside of the folder, as on real folders */
+.panel > .task-list {
+    border-top: 1px solid rgba(110, 70, 25, 0.25);
+    box-shadow: inset 0 1px 0 rgba(255, 248, 230, 0.5);
+}
+
+.count {
+    --sheet: var(--stamp-red);
+    min-width: 1.8em;
+    border-radius: 0;
+    color: var(--on-accent);
+    font-family: var(--font);
+    font-weight: 700;
+}
+
+/* Tasks: typed slips */
+.task {
+    --sheet: #eee2c4;
+    border: 0;
+    margin-top: 8px;
+}
+
+.task:nth-child(odd) {
+    transform: rotate(-0.3deg);
+}
+
+.task:nth-child(even) {
+    transform: rotate(0.25deg);
+}
+
+.task.overdue {
+    --sheet: #ebcdb3;
+}
+
+.task.due-today {
+    --sheet: #eed6a6;
+}
+
+.task.done {
+    --sheet: #e0d2b2;
+}
+
+/* Done: crossed out with a red pencil. The line is a background on the
+   (inline) title text, so it runs line after line on wrapped titles, and
+   is drawn in 1 s when the task is checked (.striking). */
+.task-title .strike {
+    background: linear-gradient(var(--stamp-red), var(--stamp-red)) no-repeat 0 58% / 0% 2px;
+}
+
+.task.done .task-title .strike {
+    background-size: 100% 2px;
+}
+
+.task.striking .task-title .strike {
+    transition: background-size 1s cubic-bezier(0.45, 0.05, 0.4, 1);
+}
+
+.task.done .task-title {
+    color: var(--ink-muted);
+}
+
+.task.striking .task-title {
+    transition: color 1s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .task.striking .task-title .strike {
+        transition: none;
+    }
+}
+
+/* Checkboxes: an inked square, ticked in red */
+.task-check {
+    appearance: none;
+    flex: none;
+    display: grid;
+    place-items: center;
+    border: 1.5px solid var(--rule);
+    border-radius: 2px 1px 3px 1px;
+    background: rgba(255, 248, 230, 0.6);
+}
+
+.task-check:checked::after {
+    content: '✓';
+    color: var(--stamp-red);
+    font-weight: 700;
+    font-size: 15px;
+    line-height: 1;
+    transform: rotate(-8deg);
+}
+
+.task-check:focus-visible {
+    outline: 2px solid var(--stamp-red);
+    outline-offset: 1px;
+}
+
+.task-title {
+    font-weight: 700;
+}
+
+.tag.late {
+    font-family: var(--font-display);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.severity {
+    color: var(--stamp-red);
+}
+
+.gain-badge,
+.streak-badge {
+    --sheet: #f3e9d0;
+    border: 0;
+    background: transparent;
+    font-family: var(--font-display);
+    letter-spacing: 0.03em;
+}
+
+.gain-badge {
+    color: var(--success);
+}
+
+.gain-badge.zero {
+    color: var(--ink-muted);
+}
+
+.task.overdue .gain-badge:not(.zero) {
+    --sheet: var(--success);
+    color: var(--on-accent);
+}
+
+.streak-badge.kept {
+    color: var(--stamp-red);
+}
+
+.task-empty {
+    font-style: italic;
+}
+
+/* ---------- Popups: official documents ---------- */
+
+.modal {
+    --sheet: var(--paper-light);
+    border: 0;
+    overflow: visible;
+}
+
+.modal::backdrop {
+    background: rgba(40, 24, 8, 0.5);
+}
+
+.modal h2,
+.modal-body > h2 {
+    padding-bottom: 6px;
+    border-bottom: 3px double var(--rule);
+    color: var(--ink);
+}
+
+.battle-side {
+    --sheet: #eee2c4;
+    border: 0;
+}
+
+.battle-odds,
+.battle-result,
+.pp-alert {
+    border-radius: 2px;
+}
+
+.battle-odds strong,
+.pp-balance strong {
+    font-family: var(--font-display);
+}
+
+/* ---------- Map: inks printed on old paper ---------- */
+
+.map {
+    position: relative;
+}
+
+/* Faction colours as faded washes of ink */
+.map .provinces,
+.map .overlays {
+    filter: sepia(0.45) saturate(0.6) brightness(0.98);
+}
+
+/* Paper printed over the whole map, plus a coffee ring and two burn
+   marks (clicks go through) */
+.map::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-image:
+        radial-gradient(circle at 86% 14%, transparent 52px, rgba(110, 62, 18, 0.22) 54px, rgba(110, 62, 18, 0.08) 58px, transparent 61px),
+        radial-gradient(circle at 87% 15%, transparent 49px, rgba(110, 62, 18, 0.12) 51px, transparent 54px),
+        radial-gradient(circle at 23% 83%, rgba(25, 12, 4, 0.75) 0 4px, rgba(70, 35, 10, 0.4) 6px, transparent 11px),
+        radial-gradient(circle at 97% 4%, rgba(25, 12, 4, 0.7) 0 3px, rgba(70, 35, 10, 0.35) 5px, transparent 9px), var(--relief);
+    mix-blend-mode: multiply;
+    opacity: 0.7;
+}
+
+.province {
+    stroke: var(--map-stroke);
+    stroke-width: 1.2;
+}
+
+.province.selected {
+    stroke: var(--stamp-red);
+    stroke-width: 3.5;
+}
+
+.capital-marker {
+    fill: var(--stamp-red);
+    stroke: var(--paper-light);
+    stroke-width: 2;
+}
+
+.province-label {
+    font-family: var(--font-display);
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    fill: var(--ink);
+}
+
+.unit-box {
+    stroke: var(--ink);
+    stroke-width: 1.5;
+}
+
+.unit-size {
+    font-family: var(--font-display);
+    font-weight: 700;
+}
+
+/* ---------- Action bar ---------- */
+
+.action-unit {
+    font-family: var(--font-display);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink);
+}
+
+.action:disabled {
+    opacity: 0.5;
+}
+
+/* ---------- Toast: a telegram strip ---------- */
+
+.toast {
+    --sheet: #eee2c4;
+    border: 0;
+    color: var(--ink);
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+}
+
+.toast.success {
+    --sheet: #e2dfba;
+    background: transparent;
+    color: var(--success);
+}
+
+.toast.error {
+    --sheet: #ecccb2;
+    background: transparent;
+    color: var(--danger);
+}
+
+/* ---------- Top bar fits one line on a laptop ---------- */
+
+.dev-controls {
+    gap: 6px;
+    font-size: 0.85rem;
+}
+
+.dev-controls button,
+.logout {
+    padding: 4px 10px;
+}
+
+.dev-controls input {
+    width: 96px;
+}
+
+.session-badge {
+    gap: 8px;
+    padding: 3px 10px;
+    font-size: 0.78rem;
+}
+
+.session-skip {
+    padding: 2px 9px;
+}
+
+/* In a test session the session badge already says so */
+.save-status[data-state='local'] {
+    display: none;
+}
+
+/* The selected unit: underlined in red pencil, no box */
+.unit-row:hover,
+.unit-row.selected {
+    border-color: transparent;
+    background: rgba(255, 248, 230, 0.45);
+}
+
+.unit-row.selected .unit-name {
+    text-decoration: underline 2px var(--stamp-red);
+    text-underline-offset: 3px;
+}
+
+/* The test session badge: a red slip pinned to the letterhead */
+.session-badge {
+    --sheet: #e9c7a8;
+    border: 0;
+}
+
+/* The period fonts run wide: keep labels and buttons on one line */
+.panel-head h2,
+.add,
+.action-label,
+.logout,
+.dev-controls button,
+.session-badge,
+.modal-actions button,
+.tag {
+    white-space: nowrap;
+}
+
+.panel-head h2 {
+    font-size: 0.85rem;
+    letter-spacing: 0.08em;
+}
+
+.add,
+.dev-controls button,
+.logout {
+    letter-spacing: 0.04em;
+}
+
+.task-meta {
+    font-size: 0.78rem;
+}
+
+/* ---------- Form errors: a red typed note under the field ---------- */
+
+.modal .error {
+    display: block;
+    margin-top: 4px;
+    padding: 3px 8px;
+    border-left: 3px solid var(--stamp-red);
+    background: rgba(158, 42, 32, 0.1);
+    color: var(--danger);
+    font-family: var(--font);
+    font-size: 0.82rem;
+    font-weight: 400;
+}
+
+.modal .error::before {
+    content: '✕ ';
+    font-weight: 700;
+}
+
+.modal .error:empty {
+    display: none;
+}
+
+.field input[aria-invalid] {
+    border-bottom: 2px solid var(--stamp-red);
+    background: rgba(158, 42, 32, 0.08);
+}
+
+/* ---------- Confirmation popup ---------- */
+
+.modal.confirm {
+    width: min(400px, calc(100vw - 32px));
+}
+
+.modal.confirm p {
+    margin: 12px 0 18px;
+    line-height: 1.5;
+}
+
+.panel-actions .icon-btn {
+    width: 26px;
+    padding: 0;
+}
+
+.panel-head {
+    gap: 6px;
+    padding-right: 4px;
+}
+
+.panel-head h2 {
+    padding: 7px 12px 5px;
+    letter-spacing: 0.06em;
+}
+
+/* ---------- Sheets on the wooden table ---------- */
+
+/* The top bar and the task side panel are large sheets of paper (old,
+   slightly darker than the folders and slips on them) */
+.topbar,
+.sidebar {
+    --sheet: #e3d3ae;
+}
+
+.sidebar {
+    --sheet: #dccba3;
+}
+
+.brand-title {
+    color: var(--stamp-red);
+}
+
+.dev-controls input {
+    background: rgba(255, 248, 230, 0.5);
+}
+
+/* The map, a sheet lying on the table */
+.map svg {
+    filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.6));
+}
+
+/* ---------- Province card: coordinates and the unit's orders ---------- */
+
+.province-coords {
+    margin: 0 0 2px;
+    color: var(--stamp-red);
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+}
+
+.unit-actions {
+    margin-top: 10px;
+    padding-top: 8px;
+    border-top: 1px dashed var(--rule-soft);
+}
+
+/* The unit's name is already above */
+.unit-actions .action-unit {
+    display: none;
+}
+
+.unit-actions .action-buttons {
+    gap: 6px;
+}
+
+.unit-actions .action {
+    flex: 1 1 auto;
+    min-width: max-content;
+    padding: 5px 6px 4px;
+}
+
+.unit-actions .action-label {
+    font-size: 0.68rem;
+    letter-spacing: 0.02em;
+}
+
+.unit-actions .action-cost {
+    font-size: 0.64rem;
+}
+
+.unit-actions .action-hint {
+    margin: 8px 0 0;
+    font-size: 0.75rem;
+}
+
+/* A collapsed folder (or one shrunk by a maximized one) keeps a strip of
+   its body under the tabs, so it still reads as a folder */
+.panel.collapsed,
+.sidebar.has-maximized .panel:not(.maximized) {
+    padding-bottom: 16px;
+}
+
+/* ---------- Notices: slips pinned to the top left of the map ---------- */
+
+.notices {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    z-index: 3;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: min(300px, calc(100% - 24px));
+    pointer-events: none;
+}
+
+.notice {
+    --sheet: #eee2c4;
+    display: grid;
+    gap: 2px;
+    padding: 8px 12px 8px 14px;
+    color: var(--ink);
+    font-size: 0.82rem;
+    line-height: 1.35;
+    cursor: pointer;
+    pointer-events: auto;
+    animation: notice-in 0.25s ease-out;
+}
+
+.notice:nth-child(even) {
+    rotate: 0.4deg;
+}
+
+.notice:nth-child(odd) {
+    rotate: -0.3deg;
+}
+
+/* A coloured edge, like the band of a telegram */
+.notice::before {
+    border-left: 4px solid var(--rule-soft);
+}
+
+.notice.success::before {
+    border-left-color: var(--success);
+}
+
+.notice.error {
+    --sheet: #ecd2bb;
+}
+
+.notice.error::before {
+    border-left-color: var(--stamp-red);
+}
+
+.notice-title {
+    font-family: var(--font-display);
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+}
+
+.notice.success .notice-title {
+    color: var(--success);
+}
+
+.notice.error .notice-title {
+    color: var(--stamp-red);
+}
+
+.notice.leaving {
+    animation: notice-out 0.3s ease-in forwards;
+}
+
+@keyframes notice-in {
+    from {
+        opacity: 0;
+        translate: -16px 0;
+    }
+}
+
+@keyframes notice-out {
+    to {
+        opacity: 0;
+        translate: -16px 0;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .notice,
+    .notice.leaving {
+        animation: none;
+    }
+}
+
+/* ---------- Top bar: today's date and the campaign turn ---------- */
+
+.campaign-date {
+    display: grid;
+    line-height: 1.15;
+    text-align: center;
+}
+
+.campaign-date small {
+    font-family: var(--font-display);
+    font-size: 0.66rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+}
+
+.campaign-date strong {
+    color: var(--stamp-red);
+}
+
+.campaign-date time {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 1.05rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    white-space: nowrap;
 }

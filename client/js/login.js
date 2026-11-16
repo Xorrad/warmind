@@ -7,6 +7,10 @@
  */
 
 import { getMe, getChallenge, login, register } from './api.js';
+import { setupPaper } from './ui/paper.js';
+
+// Torn paper edges for every sheet and button, as they appear
+setupPaper();
 import { solveChallenge } from './pow.js';
 
 const params = new URLSearchParams(location.search);

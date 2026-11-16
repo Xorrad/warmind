@@ -8,8 +8,9 @@
  *  - shift+click adds one of your units to the selection;
  *  - ctrl+click (⌘ on macOS) removes a unit from the selection.
  *
- * With units of yours selected, provinces they can move to are yellow and
- * the ones they can attack are red (with the odds); clicking a yellow one
+ * With units of yours selected, provinces they can move to are outlined in
+ * dashed ink and the ones they can attack in red (with the odds); clicking a
+ * dashed one
  * moves every selected unit that can go there, a red one opens the battle
  * popup with the selected units next to it ticked. The Move and Attack
  * buttons narrow the highlights to one kind. Every action goes through the
@@ -23,6 +24,27 @@ import { battleForces, winChance } from '/engine/combat.js';
 import { renderActionBar } from './ui/actions.js';
 import { h } from './ui/dom.js';
 
+/** Same number for the same text (FNV-1a). */
+function hashText(text) {
+    let x = 2166136261;
+    for (let i = 0; i < text.length; i++) x = Math.imul(x ^ text.charCodeAt(i), 16777619);
+    return x >>> 0;
+}
+
+/**
+ * Fictional latitude and longitude of a province, for the province card:
+ * the map covers about 12° of latitude and 20° of longitude somewhere in
+ * the northern and eastern hemispheres, placed by the map seed.
+ * @returns {string} Like "51°24′ N · 23°10′ E".
+ */
+export function coordinates(map, p) {
+    const seed = hashText(map.seed);
+    const north = 44 + (seed % 9) + 12 * (1 - p.center[1] / map.height);
+    const east = 8 + ((seed >>> 8) % 25) + 20 * (p.center[0] / map.width);
+    const dms = (deg) => `${Math.floor(deg)}°${String(Math.floor((deg % 1) * 60)).padStart(2, '0')}′`;
+    return `${dms(north)} N · ${dms(east)} E`;
+}
+
 /**
  * @param {{
  *   view: ReturnType<typeof import('./ui/map.js').createMapView>,
@@ -30,11 +52,11 @@ import { h } from './ui/dom.js';
  *   getMap: () => import('/engine/mapgen.js').GameMap|null,
  *   info: HTMLElement,
  *   actionBar: HTMLElement,
- *   toast: HTMLElement,
+ *   notify: ReturnType<typeof import('./ui/notices.js').createNotices>,
  *   battle: ReturnType<typeof import('./ui/battle.js').createBattleDialog>,
  * }} deps
  */
-export function createGameController({ view, store, getMap, info, actionBar, toast, battle }) {
+export function createGameController({ view, store, getMap, info, actionBar, notify, battle }) {
     /**
      * Selected unit ids (the first one is the "primary": its province is
      * shown in the info card), and what the highlights show: 'orders' (moves
@@ -57,13 +79,9 @@ export function createGameController({ view, store, getMap, info, actionBar, toa
 
     /* ---------- Messages ---------- */
 
-    let toastTimer = null;
+    /** A notice on the map (top left), titled "Orders" for the unit actions. */
     function say(message, kind = 'info') {
-        toast.textContent = message;
-        toast.className = `toast ${kind}`;
-        toast.hidden = false;
-        clearTimeout(toastTimer);
-        toastTimer = setTimeout(() => (toast.hidden = true), 3500);
+        notify(message, kind, kind === 'error' ? 'Order refused' : 'Orders');
     }
 
     /* ---------- Targets of the selection ---------- */
@@ -351,7 +369,7 @@ export function createGameController({ view, store, getMap, info, actionBar, toa
     }
 
     /**
-     * Province clicks: a yellow target moves the selection there, a red one
+     * Province clicks: a dashed target moves the selection there, a red one
      * opens the battle popup, anything else selects the province.
      */
     function selectProvince(p) {
@@ -437,8 +455,8 @@ export function createGameController({ view, store, getMap, info, actionBar, toa
         view.showTargets(targets);
 
         const hints = {
-            orders: 'Yellow: move there. Red: attack. Shift+click to add units, ctrl+click to remove.',
-            move: 'Click a yellow province to move there.',
+            orders: 'Dashed: move there. Red: attack. Shift+click to add units, ctrl+click to remove.',
+            move: 'Click a dashed province to move there.',
             attack: 'Click a red province to attack it.',
             merge: 'Click the unit to merge with.',
         };
@@ -482,6 +500,7 @@ export function createGameController({ view, store, getMap, info, actionBar, toa
         const here = unitsIn(campaign(), p.id);
         info.replaceChildren(
             ...[
+                h('p', { class: 'province-coords' }, coordinates(map, p)),
                 h('h2', {}, `${p.name}${p.isCapital ? ' ★' : ''}`),
                 h('dl', {}, ...rows.flatMap(([dt, dd]) => [h('dt', {}, dt), h('dd', {}, ...dd)])),
                 here.length > 0 &&
@@ -511,6 +530,8 @@ export function createGameController({ view, store, getMap, info, actionBar, toa
                     ),
             ].filter(Boolean),
         );
+        // The orders of the selected unit, under it
+        if (primary) info.append(actionBar);
         info.hidden = false;
     }
 

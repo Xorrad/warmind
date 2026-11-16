@@ -15,14 +15,16 @@ import { createMapView } from './ui/map.js';
 import { createGameController } from './game.js';
 import { createBattleDialog } from './ui/battle.js';
 import { createDispatchDialog } from './ui/dispatch.js';
+import { h } from './ui/dom.js';
+import { createNotices } from './ui/notices.js';
 import { currentUser } from './user.js';
 import { logout, ackNews } from './api.js';
 import { renderVersion, renderPoints, setupPointsPopover } from './ui/topbar.js';
 import { renderTasks, setupPanelToggles } from './ui/tasks.js';
-import { createTaskDialog } from './ui/modals.js';
+import { createTaskDialog, createConfirmDialog, closeOnBackdrop } from './ui/modals.js';
 import { store, session, saveStatus, settledByServer, syncDay } from './store.js';
 import { now as clockNow, canSkip, skipDays, skippedDays } from './clock.js';
-import { createTask, updateTask, toggleDone, isDoneToday } from '/engine/tasks.js';
+import { createTask, updateTask, toggleDone, isDoneToday, dayKey } from '/engine/tasks.js';
 import { estimateToday, completionGains } from '/engine/tick.js';
 
 const seedInput = /** @type {HTMLInputElement} */ (document.getElementById('seed'));
@@ -43,6 +45,8 @@ function syncMap() {
     return before !== null && before.provinces.some((p, i) => p.owner !== map.provinces[i].owner);
 }
 
+const notify = createNotices(document.getElementById('notices'));
+
 const view = createMapView(document.getElementById('map'), {
     onSelect: (province) => game.selectProvince(province),
     onUnitClick: (unitId, event) => game.selectUnit(unitId, event),
@@ -52,8 +56,9 @@ const game = createGameController({
     store,
     getMap: () => map,
     info: document.getElementById('province-info'),
-    actionBar: document.getElementById('action-bar'),
-    toast: document.getElementById('toast'),
+    // The orders of the selected unit, shown in the province card
+    actionBar: h('div', { class: 'unit-actions', role: 'group', 'aria-label': 'Unit orders' }),
+    notify,
     battle: createBattleDialog(document.getElementById('battle-dialog')),
 });
 
@@ -71,7 +76,12 @@ function load(seed) {
     mapCampaign = null;
     game.reset();
     // Units and owners belong to a map: start a new campaign for a new seed
-    if (store.get().campaign?.seed !== baseMap.seed) store.update((s) => ({ ...s, campaign: deployUnits(baseMap) }));
+    if (store.get().campaign?.seed !== baseMap.seed) {
+        store.update((s) => ({ ...s, campaign: { ...deployUnits(baseMap), startedOn: dayKey(clockNow()) } }));
+    } else if (!store.get().campaign.startedOn) {
+        // Campaigns saved before turns were counted start counting today
+        store.update((s) => ({ ...s, campaign: { ...s.campaign, startedOn: dayKey(clockNow()) } }));
+    }
     syncMap();
     view.render(map);
     settle();
@@ -98,14 +108,45 @@ const taskDialog = createTaskDialog(document.getElementById('task-dialog'), (fie
     setTasks((tasks) =>
         id ? tasks.map((t) => (t.id === id ? updateTask(t, fields) : t)) : [...tasks, createTask(fields, { id: newId(), now })],
     );
+    notify(fields.title.trim(), 'info', id ? 'Task updated' : fields.recurring ? 'New daily task' : 'New task');
 });
 
+/** Points a task brings if completed now (as shown on its badge). */
+function gainOf(id) {
+    if (!map) return 0;
+    const now = clockNow();
+    return completionGains(store.get().tasks, { provincesOwned: provincesOwned(), now }).get(id) ?? 0;
+}
+
+const askConfirm = createConfirmDialog(document.getElementById('confirm-dialog'));
+// Every popup closes when clicking outside it (like Escape)
+for (const dialog of document.querySelectorAll('dialog.modal')) closeOnBackdrop(dialog);
+
 const taskCallbacks = {
-    onToggle: (id) => setTasks((tasks) => tasks.map((t) => (t.id === id ? toggleDone(t, clockNow()) : t))),
+    onToggle: (id) => {
+        const before = store.get().tasks.find((t) => t.id === id);
+        if (!before) return;
+        const now = clockNow();
+        const wasDone = before.recurring ? isDoneToday(before, now) : before.completedAt !== null;
+        const gain = wasDone ? 0 : gainOf(id);
+        setTasks((tasks) => tasks.map((t) => (t.id === id ? toggleDone(t, now) : t)));
+        if (wasDone) notify(before.title, 'info', 'Marked as not done');
+        else notify(`${before.title}${gain > 0 ? ` (+${gain} AP)` : ''}`, 'success', before.recurring ? 'Done for today' : 'Task done');
+    },
     onEdit: (id) => taskDialog.open(store.get().tasks.find((t) => t.id === id)),
     onDelete: (id) => {
         const task = store.get().tasks.find((t) => t.id === id);
-        if (task && confirm(`Delete "${task.title}"?`)) setTasks((tasks) => tasks.filter((t) => t.id !== id));
+        if (!task) return;
+        askConfirm({
+            title: 'Delete task',
+            message: `"${task.title}" will be deleted for good.`,
+            confirm: 'Delete',
+            danger: true,
+        }).then((yes) => {
+            if (!yes) return;
+            setTasks((tasks) => tasks.filter((t) => t.id !== id));
+            notify(task.title, 'info', 'Task deleted');
+        });
     },
 };
 
@@ -176,8 +217,20 @@ function showNews(items) {
     });
 }
 
+const turnEl = document.querySelector('[data-campaign-turn]');
+const campaignDateEl = document.querySelector('[data-campaign-date]');
+/** Today's date and the campaign turn (turn 1 = the day it started), in the top bar. */
+function renderDate(now) {
+    const started = store.get().campaign?.startedOn;
+    const days = started ? Math.round((new Date(`${dayKey(now)}T12:00`) - new Date(`${started}T12:00`)) / 86400000) : 0;
+    turnEl.textContent = String(Math.max(0, days) + 1);
+    campaignDateEl.dateTime = dayKey(now);
+    campaignDateEl.textContent = now.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+}
+
 function renderAll() {
     const now = clockNow();
+    renderDate(now);
     const { tasks, ledger } = store.get();
     if (!map) return;
     const context = { provincesOwned: provincesOwned(), now };

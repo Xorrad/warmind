@@ -1,5 +1,5 @@
 /**
- * @file Action bar (bottom right of the map).
+ * @file Orders of the selected unit (in the province card).
  *
  * Shows the actions of the selected unit with their cost. Disabled buttons
  * explain why in their tooltip. The bar only reports clicks; main.js

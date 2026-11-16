@@ -1,23 +1,112 @@
-/* base.css: design tokens and element defaults */
+/* base.css: design tokens and element defaults
+ *
+ * Style: a 1930s state archive. Yellowed paper, typewritten text, manila
+ * folders, ink rules and red stamps. Textures are generated (SVG noise as
+ * data: URIs), no image files.
+ */
 
+/* Fonts: Special Elite, a worn inked typewriter (Apache 2.0), and Old
+   Standard TT, a period print serif (SIL Open Font License); see
+   client/assets/fonts/LICENSE-* */
+@font-face {
+    font-family: 'Special Elite';
+    src: url('/assets/fonts/special-elite-latin-400-normal.woff2') format('woff2');
+    font-weight: 100 900;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Old Standard TT';
+    src: url('/assets/fonts/old-standard-tt-latin-400-normal.woff2') format('woff2');
+    font-weight: 100 500;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Old Standard TT';
+    src: url('/assets/fonts/old-standard-tt-latin-700-normal.woff2') format('woff2');
+    font-weight: 600 900;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Old Standard TT';
+    src: url('/assets/fonts/old-standard-tt-latin-400-italic.woff2') format('woff2');
+    font-weight: 100 900;
+    font-style: italic;
+    font-display: swap;
+}
+
+/* Palette: warm, browned paper (see docs/example_textures/ui.png) */
 :root {
-    --bg: #eef1f5;
-    --surface: #ffffff;
-    --surface-alt: #e3e8ef;
-    --text: #1d232b;
-    --text-muted: #5b6573;
-    --border: #2b3138;
-    --accent: #3b6fb6;
-    --map-stroke: #2b3138;
-    --map-bg: #cfd5dc;
-    --radius: 8px;
-    --danger: #b8433b;
-    --danger-bg: #f8e3e1;
-    --warning: #b4610b;
-    --warning-bg: #fdecd6;
-    --success: #4f7f3f;
-    --panel-todo: #dceafb;
-    --font: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    /* Paper and ink */
+    --desk: #c4a97a;
+    --paper: #d9c39a;
+    --paper-light: #e6d5b0;
+    --paper-dark: #cbb185;
+    --manila: #d8be88;
+    --ink: #2a2017;
+    --ink-muted: #6a563e;
+    --rule: #4a3b2a;
+    --rule-soft: #a88f66;
+    --stamp-red: #9e2a20;
+    --highlight: #a8781a;
+    --shadow: 52, 32, 12;
+
+    /* Roles (used everywhere) */
+    --bg: var(--desk);
+    --surface: var(--paper-light);
+    --surface-alt: var(--paper);
+    --text: var(--ink);
+    --text-muted: var(--ink-muted);
+    --border: var(--rule);
+    --accent: var(--stamp-red);
+    --on-accent: #f3e8cf;
+    --map-stroke: #3b2e20;
+    --map-bg: #d6bf94;
+    --radius: 3px;
+    --danger: #8f1d14;
+    --danger-bg: rgba(158, 42, 32, 0.14);
+    --warning: #8f5410;
+    --warning-bg: rgba(178, 116, 34, 0.2);
+    --success: #4a5527;
+    --success-bg: rgba(84, 98, 44, 0.18);
+    --panel-todo: var(--manila);
+
+    --font: 'Special Elite', 'Courier New', Courier, monospace;
+    --font-display: 'Old Standard TT', Georgia, 'Times New Roman', serif;
+
+    /* Paper, from sharp layers (no blur): crinkle relief lit from the top
+       left, fibres, then faint mottling. Each tile holds a
+       whole number of noise cycles, so it repeats seamlessly. */
+    --relief: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cfilter id='f' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.035' numOctaves='5' seed='11' stitchTiles='stitch'/%3E%3CfeDiffuseLighting surfaceScale='2.4' lighting-color='%23ffffff'%3E%3CfeDistantLight azimuth='225' elevation='52'/%3E%3C/feDiffuseLighting%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.32 0 0 0 0 0.21 0 0 0 0 0.1 -1.05 0 0 0 0.98'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23f)'/%3E%3C/svg%3E");
+    --fibres: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cfilter id='f' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.035 0.55' numOctaves='2' seed='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.36 0 0 0 0 0.25 0 0 0 0 0.12 1.9 0 0 0 -1.12'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23f)'/%3E%3C/svg%3E");
+    --mottle: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1000' height='1000'%3E%3Cfilter id='f' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.004' numOctaves='3' seed='7' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.45 0 0 0 0 0.29 0 0 0 0 0.1 0 0 0 -0.9 0.52'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23f)'/%3E%3C/svg%3E");
+    --paper-texture: var(--fibres), var(--relief), var(--mottle);
+    /* The table: dark stained spruce planks. Wood grain runs along the
+       planks (long, thin noise), with light streaks and fine pores. */
+    --wood-color: #5e4029;
+    --wood-dark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1000' height='400'%3E%3Cfilter id='f' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.004 0.1' numOctaves='4' seed='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.05 0 0 0 0 0.035 0 0 0 0 0.02 2.6 0 0 0 -1.15'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23f)'/%3E%3C/svg%3E");
+    --wood-light: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1000' height='400'%3E%3Cfilter id='f' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.005 0.2' numOctaves='3' seed='9' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.42 0 0 0 0 0.3 0 0 0 0 0.19 3.4 0 0 0 -2.05'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23f)'/%3E%3C/svg%3E");
+    --wood-pores: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1000' height='400'%3E%3Cfilter id='f' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.02 0.6' numOctaves='2' seed='5' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.04 0 0 0 0 0.03 0 0 0 0 0.02 1.8 0 0 0 -0.72'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23f)'/%3E%3C/svg%3E");
+    --wood-planks: repeating-linear-gradient(
+        180deg,
+        transparent 0 178px,
+        rgba(20, 10, 4, 0.6) 178px 180px,
+        rgba(255, 220, 170, 0.07) 180px 181px,
+        transparent 181px 182px
+    );
+    --wood:
+        radial-gradient(ellipse at 50% 40%, transparent 50%, rgba(0, 0, 0, 0.3) 100%), var(--wood-planks), var(--wood-pores),
+        var(--wood-dark), var(--wood-light);
+    /* Text lying directly on the table */
+    --on-wood: #eadcbc;
+    --on-wood-muted: #b9a582;
+    /* Darker, worn edges of a large sheet */
+    --vignette: radial-gradient(ellipse at center, transparent 60%, rgba(100, 60, 18, 0.3) 100%);
 }
 
 *,
@@ -39,7 +128,10 @@ body {
 
 body {
     font-family: var(--font);
-    background: var(--bg);
+    /* The table everything lies on: top bar, folders and map */
+    background-color: var(--wood-color);
+    background-image: var(--wood);
+    background-attachment: fixed;
     color: var(--text);
 }
 
@@ -48,4 +140,45 @@ input,
 select {
     font: inherit;
     color: inherit;
+}
+
+/* Typed text selection looks like a highlighter on paper */
+::selection {
+    background: rgba(181, 132, 28, 0.35);
+}
+
+/* A sheet of paper with torn, worn edges (see client/js/ui/paper.js, which
+   adds .sheet and the --tear outline). The paper itself is ::before, its
+   shadow ::after: both follow the outline, and the text stays crisp (no
+   filter on the element). Set --sheet to tint a sheet. */
+.sheet {
+    isolation: isolate;
+    background: transparent !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
+}
+
+.sheet::before,
+.sheet::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    clip-path: var(--tear, none);
+    pointer-events: none;
+}
+
+.sheet::before {
+    z-index: -1;
+    background-color: var(--sheet, var(--paper-light));
+    background-image: var(--paper-texture);
+    /* Browned, slightly burnt edges */
+    box-shadow:
+        inset 0 0 0 1px rgba(110, 66, 20, 0.28),
+        inset 0 0 9px 2px rgba(120, 72, 22, 0.32);
+}
+
+.sheet::after {
+    z-index: -2;
+    background: rgba(var(--shadow), 0.55);
+    transform: translate(2px, 3px);
 }

@@ -5,6 +5,65 @@
 import { TASKS } from '/engine/config.js';
 import { partitionTasks, isOverdue, isDoneToday, streakOf, daysLeft } from '/engine/tasks.js';
 import { h } from './dom.js';
+import { playCrossOut, playUncross } from './sound.js';
+
+/** How long the pencil takes to cross a task out; the task moves after. */
+export const STRIKE_MS = 1000;
+
+/**
+ * Tasks being crossed out: id → timer that commits the toggle. They are
+ * drawn as done in the meantime, even if the lists are re-rendered.
+ * @type {Map<string, ReturnType<typeof setTimeout>>}
+ */
+const striking = new Map();
+/** The commit of each pending toggle (to flush them when leaving the page). */
+const commits = new Map();
+
+// Leaving the page during an animation: save the checks anyway
+addEventListener('pagehide', () => {
+    for (const [id, timer] of striking) {
+        clearTimeout(timer);
+        commits.get(id)?.();
+    }
+    striking.clear();
+    commits.clear();
+});
+
+/**
+ * The checkbox of a task: crossing out plays a pen stroke and waits for the
+ * line to be drawn before the task moves (onToggle); unchecking is
+ * immediate. Clicking again during the animation cancels it.
+ */
+function onCheck(event, task, done, onToggle) {
+    const li = event.target.closest('.task');
+    if (striking.has(task.id)) {
+        clearTimeout(striking.get(task.id));
+        striking.delete(task.id);
+        commits.delete(task.id);
+        li.classList.remove('done', 'striking');
+        playUncross();
+        return;
+    }
+    if (done) {
+        playUncross();
+        onToggle(task.id);
+        return;
+    }
+    playCrossOut();
+    li.classList.add('striking');
+    // Next frame, so the line grows from nothing
+    requestAnimationFrame(() => li.classList.add('done'));
+    const commit = () => onToggle(task.id);
+    commits.set(task.id, commit);
+    striking.set(
+        task.id,
+        setTimeout(() => {
+            striking.delete(task.id);
+            commits.delete(task.id);
+            commit();
+        }, STRIKE_MS),
+    );
+}
 
 /**
  * @typedef {object} TaskCallbacks
@@ -28,7 +87,11 @@ export function renderTasks(panels, tasks, now, gains, callbacks) {
     fill(panels.todo, todo, ctx, 'Nothing left to do. Add a task to earn points.');
     fill(panels.streaks, streaks, ctx, 'No daily task yet. Add habits you want to keep every day.');
     fillPaged(panels.completed, completed, ctx, 'Nothing completed yet.');
-    const counts = { todo: todo.length, streaks: streaks.filter((t) => !isDoneToday(t, now)).length, completed: completed.length };
+    const counts = {
+        todo: todo.filter((t) => !isDoneToday(t, now)).length,
+        streaks: streaks.filter((t) => !isDoneToday(t, now)).length,
+        completed: completed.length,
+    };
     for (const [name, n] of Object.entries(counts)) {
         const count = document.querySelector(`[data-count="${name}"]`);
         if (count) count.textContent = String(n);
@@ -84,7 +147,7 @@ function fillPaged(container, tasks, ctx, emptyText) {
 
 function taskItem(task, { now, gains, callbacks: { onToggle, onEdit, onDelete } }) {
     const overdue = isOverdue(task, now);
-    const done = task.recurring ? isDoneToday(task, now) : task.completedAt !== null;
+    const done = (task.recurring ? isDoneToday(task, now) : task.completedAt !== null) || striking.has(task.id);
     const dueToday = !task.recurring && !done && !overdue && new Date(task.dueAt).toDateString() === now.toDateString();
     return h(
         'li',
@@ -94,12 +157,12 @@ function taskItem(task, { now, gains, callbacks: { onToggle, onEdit, onDelete } 
             class: 'task-check',
             checked: done,
             'aria-label': done ? `Mark "${task.title}" as not done` : `Mark "${task.title}" as done`,
-            onchange: () => onToggle(task.id),
+            onchange: (e) => onCheck(e, task, done && !striking.has(task.id), onToggle),
         }),
         h(
             'button',
             { type: 'button', class: 'task-body', title: 'Edit task', onclick: () => onEdit(task.id) },
-            h('span', { class: 'task-title' }, task.title),
+            h('span', { class: 'task-title' }, h('span', { class: 'strike' }, task.title)),
             h('span', { class: 'task-meta' }, ...meta(task, now, overdue)),
         ),
         gains.has(task.id) && gainBadge(gains.get(task.id), overdue),
