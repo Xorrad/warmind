@@ -15,6 +15,7 @@ import { createMapView } from './ui/map.js';
 import { createGameController } from './game.js';
 import { createBattleDialog } from './ui/battle.js';
 import { createDispatchDialog } from './ui/dispatch.js';
+import { h } from './ui/dom.js';
 import { currentUser } from './user.js';
 import { logout, ackNews } from './api.js';
 import { renderVersion, renderPoints, setupPointsPopover } from './ui/topbar.js';
@@ -52,7 +53,8 @@ const game = createGameController({
     store,
     getMap: () => map,
     info: document.getElementById('province-info'),
-    actionBar: document.getElementById('action-bar'),
+    // The orders of the selected unit, shown in the province card
+    actionBar: h('div', { class: 'unit-actions', role: 'group', 'aria-label': 'Unit orders' }),
     toast: document.getElementById('toast'),
     battle: createBattleDialog(document.getElementById('battle-dialog')),
 });

@@ -24,6 +24,27 @@ import { battleForces, winChance } from '/engine/combat.js';
 import { renderActionBar } from './ui/actions.js';
 import { h } from './ui/dom.js';
 
+/** Same number for the same text (FNV-1a). */
+function hashText(text) {
+    let x = 2166136261;
+    for (let i = 0; i < text.length; i++) x = Math.imul(x ^ text.charCodeAt(i), 16777619);
+    return x >>> 0;
+}
+
+/**
+ * Fictional latitude and longitude of a province, for the province card:
+ * the map covers about 12° of latitude and 20° of longitude somewhere in
+ * the northern and eastern hemispheres, placed by the map seed.
+ * @returns {string} Like "51°24′ N · 23°10′ E".
+ */
+export function coordinates(map, p) {
+    const seed = hashText(map.seed);
+    const north = 44 + (seed % 9) + 12 * (1 - p.center[1] / map.height);
+    const east = 8 + ((seed >>> 8) % 25) + 20 * (p.center[0] / map.width);
+    const dms = (deg) => `${Math.floor(deg)}°${String(Math.floor((deg % 1) * 60)).padStart(2, '0')}′`;
+    return `${dms(north)} N · ${dms(east)} E`;
+}
+
 /**
  * @param {{
  *   view: ReturnType<typeof import('./ui/map.js').createMapView>,
@@ -483,6 +504,7 @@ export function createGameController({ view, store, getMap, info, actionBar, toa
         const here = unitsIn(campaign(), p.id);
         info.replaceChildren(
             ...[
+                h('p', { class: 'province-coords' }, coordinates(map, p)),
                 h('h2', {}, `${p.name}${p.isCapital ? ' ★' : ''}`),
                 h('dl', {}, ...rows.flatMap(([dt, dd]) => [h('dt', {}, dt), h('dd', {}, ...dd)])),
                 here.length > 0 &&
@@ -512,6 +534,8 @@ export function createGameController({ view, store, getMap, info, actionBar, toa
                     ),
             ].filter(Boolean),
         );
+        // The orders of the selected unit, under it
+        if (primary) info.append(actionBar);
         info.hidden = false;
     }
 

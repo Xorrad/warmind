@@ -71,7 +71,7 @@
 .province-info {
     position: absolute;
     top: 12px;
-    left: 12px;
+    right: 12px;
     min-width: 200px;
     max-width: min(320px, calc(100% - 24px));
     max-height: calc(100% - 120px);
@@ -2191,6 +2191,50 @@ input[type='radio'] {
 /* The map, a sheet lying on the table */
 .map svg {
     filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.6));
+}
+
+/* ---------- Province card: coordinates and the unit's orders ---------- */
+
+.province-coords {
+    margin: 0 0 2px;
+    color: var(--stamp-red);
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+}
+
+.unit-actions {
+    margin-top: 10px;
+    padding-top: 8px;
+    border-top: 1px dashed var(--rule-soft);
+}
+
+/* The unit's name is already above */
+.unit-actions .action-unit {
+    display: none;
+}
+
+.unit-actions .action-buttons {
+    gap: 6px;
+}
+
+.unit-actions .action {
+    flex: 1 1 auto;
+    min-width: max-content;
+    padding: 5px 6px 4px;
+}
+
+.unit-actions .action-label {
+    font-size: 0.68rem;
+    letter-spacing: 0.02em;
+}
+
+.unit-actions .action-cost {
+    font-size: 0.64rem;
+}
+
+.unit-actions .action-hint {
+    margin: 8px 0 0;
+    font-size: 0.75rem;
 }
 
 /* A collapsed folder (or one shrunk by a maximized one) keeps a strip of
