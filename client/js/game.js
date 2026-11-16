@@ -8,8 +8,9 @@
  *  - shift+click adds one of your units to the selection;
  *  - ctrl+click (⌘ on macOS) removes a unit from the selection.
  *
- * With units of yours selected, provinces they can move to are yellow and
- * the ones they can attack are red (with the odds); clicking a yellow one
+ * With units of yours selected, provinces they can move to are outlined in
+ * dashed ink and the ones they can attack in red (with the odds); clicking a
+ * dashed one
  * moves every selected unit that can go there, a red one opens the battle
  * popup with the selected units next to it ticked. The Move and Attack
  * buttons narrow the highlights to one kind. Every action goes through the
@@ -351,7 +352,7 @@ export function createGameController({ view, store, getMap, info, actionBar, toa
     }
 
     /**
-     * Province clicks: a yellow target moves the selection there, a red one
+     * Province clicks: a dashed target moves the selection there, a red one
      * opens the battle popup, anything else selects the province.
      */
     function selectProvince(p) {
@@ -437,8 +438,8 @@ export function createGameController({ view, store, getMap, info, actionBar, toa
         view.showTargets(targets);
 
         const hints = {
-            orders: 'Yellow: move there. Red: attack. Shift+click to add units, ctrl+click to remove.',
-            move: 'Click a yellow province to move there.',
+            orders: 'Dashed: move there. Red: attack. Shift+click to add units, ctrl+click to remove.',
+            move: 'Click a dashed province to move there.',
             attack: 'Click a red province to attack it.',
             merge: 'Click the unit to merge with.',
         };

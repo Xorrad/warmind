@@ -139,7 +139,7 @@ export function createMapView(container, { onSelect, onUnitClick } = {}) {
     }
 
     /**
-     * Mark the provinces the selected unit can move to (yellow) or attack
+     * Mark the provinces the selected unit can move to (dashed ink) or attack
      * (red), each with a short label (cost, win chance).
      * @param {{ province: number, kind: 'move'|'attack', label: string, affordable: boolean }[]} targets
      */

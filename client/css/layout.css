@@ -3,16 +3,21 @@
 .app {
     display: grid;
     grid-template-rows: auto 1fr;
+    /* Never wider than the screen, whatever the top bar holds */
+    grid-template-columns: minmax(0, 1fr);
     height: 100vh;
 }
 
 .topbar {
+    position: relative;
+    z-index: 2;
     display: flex;
     align-items: center;
     gap: 16px;
-    padding: 8px 16px;
-    background: var(--surface-alt);
-    border-bottom: 2px solid var(--border);
+    padding: 10px 20px;
+    /* A sheet of paper on the table (see paper.js); the table shows around it */
+    margin: 8px 10px 4px;
+    background: transparent;
     flex-wrap: wrap;
 }
 
@@ -23,24 +28,26 @@
 }
 
 .brand-title {
-    font-weight: 800;
-    font-size: 1.4rem;
-    letter-spacing: 0.04em;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 1.55rem;
+    letter-spacing: 0.14em;
+    color: var(--stamp-red);
 }
 
 .brand-version {
-    font-size: 0.65rem;
-    font-weight: 500;
+    font-size: 0.68rem;
     color: var(--text-muted);
+    letter-spacing: 0.05em;
 }
 
 /* Short vertical rule between the top bar groups */
 .topbar-divider {
     align-self: stretch;
-    width: 2px;
+    width: 1px;
     margin: 4px 0;
-    background: var(--border);
-    opacity: 0.35;
+    background: var(--rule);
+    opacity: 0.5;
 }
 
 /* The divider before the controls carries them to the right */
@@ -51,25 +58,27 @@
 .map-area {
     position: relative;
     overflow: hidden;
-    background: var(--map-bg);
+    /* On the table, like the top bar and the side panel */
+    background: transparent;
 }
 
 /* ---------- Body: task side panel + map ---------- */
 
 .body {
     display: grid;
-    grid-template-columns: minmax(260px, 320px) 1fr;
+    grid-template-columns: minmax(280px, 345px) minmax(0, 1fr);
     min-height: 0;
 }
 
 .sidebar {
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    padding: 10px;
+    gap: 12px;
+    padding: 14px 10px;
     min-height: 0;
-    background: var(--surface-alt);
-    border-right: 2px solid var(--border);
+    /* A large sheet on the table, the folders lie on it (see paper.js) */
+    margin: 6px 4px 10px 10px;
+    background: transparent;
 }
 
 .view-toggle {
@@ -89,12 +98,21 @@
     }
 
     .body {
-        grid-template-columns: 1fr;
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .topbar {
+        margin: 6px 6px 2px;
+    }
+
+    .session-badge {
+        flex-wrap: wrap;
+        white-space: normal;
     }
 
     .sidebar {
         display: none;
-        border-right: 0;
+        margin: 4px 6px 6px;
     }
 
     .app.show-tasks .sidebar {

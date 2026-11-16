@@ -7,6 +7,10 @@
  */
 
 import { getMe, getBuild } from './api.js';
+import { setupPaper } from './ui/paper.js';
+
+// Torn paper edges for every sheet and button, as they appear
+setupPaper();
 import { setUser, setTestSessions } from './user.js';
 
 const [user, build] = await Promise.all([getMe().catch(() => null), getBuild().catch(() => null)]);
