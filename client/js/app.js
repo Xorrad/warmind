@@ -24,7 +24,7 @@ import { renderTasks, setupPanelToggles } from './ui/tasks.js';
 import { createTaskDialog, createConfirmDialog, closeOnBackdrop } from './ui/modals.js';
 import { store, session, saveStatus, settledByServer, syncDay } from './store.js';
 import { now as clockNow, canSkip, skipDays, skippedDays } from './clock.js';
-import { createTask, updateTask, toggleDone, isDoneToday } from '/engine/tasks.js';
+import { createTask, updateTask, toggleDone, isDoneToday, dayKey } from '/engine/tasks.js';
 import { estimateToday, completionGains } from '/engine/tick.js';
 
 const seedInput = /** @type {HTMLInputElement} */ (document.getElementById('seed'));
@@ -76,7 +76,12 @@ function load(seed) {
     mapCampaign = null;
     game.reset();
     // Units and owners belong to a map: start a new campaign for a new seed
-    if (store.get().campaign?.seed !== baseMap.seed) store.update((s) => ({ ...s, campaign: deployUnits(baseMap) }));
+    if (store.get().campaign?.seed !== baseMap.seed) {
+        store.update((s) => ({ ...s, campaign: { ...deployUnits(baseMap), startedOn: dayKey(clockNow()) } }));
+    } else if (!store.get().campaign.startedOn) {
+        // Campaigns saved before turns were counted start counting today
+        store.update((s) => ({ ...s, campaign: { ...s.campaign, startedOn: dayKey(clockNow()) } }));
+    }
     syncMap();
     view.render(map);
     settle();
@@ -212,8 +217,20 @@ function showNews(items) {
     });
 }
 
+const turnEl = document.querySelector('[data-campaign-turn]');
+const campaignDateEl = document.querySelector('[data-campaign-date]');
+/** Today's date and the campaign turn (turn 1 = the day it started), in the top bar. */
+function renderDate(now) {
+    const started = store.get().campaign?.startedOn;
+    const days = started ? Math.round((new Date(`${dayKey(now)}T12:00`) - new Date(`${started}T12:00`)) / 86400000) : 0;
+    turnEl.textContent = String(Math.max(0, days) + 1);
+    campaignDateEl.dateTime = dayKey(now);
+    campaignDateEl.textContent = now.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+}
+
 function renderAll() {
     const now = clockNow();
+    renderDate(now);
     const { tasks, ledger } = store.get();
     if (!map) return;
     const context = { provincesOwned: provincesOwned(), now };
