@@ -45,6 +45,8 @@ export function createTaskDialog(dialog, onSave) {
     const heading = dialog.querySelector('[data-heading]');
     const dueRow = dialog.querySelector('[data-due-row]');
     let editingId = null;
+    /** Due date of the task being edited, if any. */
+    let editingDue = null;
 
     // Due date shortcuts push the current due date back (they stack); with
     // no date set they count from tonight 23:59
@@ -73,10 +75,42 @@ export function createTaskDialog(dialog, onSave) {
 
     function showErrors(errors) {
         for (const out of dialog.querySelectorAll('[data-error]')) {
-            out.textContent = errors[out.dataset.error] ?? '';
+            const name = out.dataset.error;
+            out.textContent = errors[name] ?? '';
+            const input = fields[name];
+            if (input instanceof HTMLInputElement) {
+                input.toggleAttribute('aria-invalid', Boolean(errors[name]));
+                if (!out.id) out.id = `task-error-${name}`;
+                input.setAttribute('aria-describedby', out.id);
+            }
         }
         const first = Object.keys(errors)[0];
         if (first) fields[first]?.focus?.();
+    }
+
+    // An error goes away as soon as its field is changed
+    for (const name of ['title', 'dueAt', 'severity']) {
+        fields[name].addEventListener('input', () => {
+            const out = dialog.querySelector(`[data-error="${name}"]`);
+            out.textContent = '';
+            fields[name].removeAttribute('aria-invalid');
+        });
+    }
+    // The date shortcuts fill the field without an input event
+    for (const button of dialog.querySelectorAll('[data-add-days], [data-add-months]')) {
+        button.addEventListener('click', () => fields.dueAt.dispatchEvent(new Event('input')));
+    }
+
+    /** Checks of the form itself, on top of the task's own rules (validateTask). */
+    function formErrors(values) {
+        const errors = validateTask(values);
+        if (!values.recurring && !errors.dueAt) {
+            // A new due date must be ahead; an old task may keep its own
+            const unchanged = editingDue !== null && Date.parse(values.dueAt) === Date.parse(editingDue);
+            if (!unchanged && Date.parse(values.dueAt) <= now().getTime()) errors.dueAt = 'That date has already passed: pick a later one.';
+        }
+        if (!values.recurring && fields.dueAt.validity.badInput) errors.dueAt = 'Fill in the whole date and time.';
+        return errors;
     }
 
     form.addEventListener('submit', (e) => {
@@ -89,7 +123,7 @@ export function createTaskDialog(dialog, onSave) {
             recurring,
             dueAt: recurring || !fields.dueAt.value ? null : new Date(fields.dueAt.value).toISOString(),
         };
-        const errors = validateTask(values);
+        const errors = formErrors(values);
         showErrors(errors);
         if (Object.keys(errors).length) return;
         onSave(values, editingId);
@@ -99,6 +133,7 @@ export function createTaskDialog(dialog, onSave) {
     return {
         open(task = null, kind = 'once') {
             editingId = task?.id ?? null;
+            editingDue = task?.dueAt ?? null;
             heading.textContent = task ? 'Edit task' : kind === 'daily' ? 'New daily task' : 'New task';
             const defaultDue = now();
             defaultDue.setDate(defaultDue.getDate() + 1);

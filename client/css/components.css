@@ -2113,6 +2113,34 @@ input[type='radio'] {
     font-size: 0.78rem;
 }
 
+/* ---------- Form errors: a red typed note under the field ---------- */
+
+.modal .error {
+    display: block;
+    margin-top: 4px;
+    padding: 3px 8px;
+    border-left: 3px solid var(--stamp-red);
+    background: rgba(158, 42, 32, 0.1);
+    color: var(--danger);
+    font-family: var(--font);
+    font-size: 0.82rem;
+    font-weight: 400;
+}
+
+.modal .error::before {
+    content: '✕ ';
+    font-weight: 700;
+}
+
+.modal .error:empty {
+    display: none;
+}
+
+.field input[aria-invalid] {
+    border-bottom: 2px solid var(--stamp-red);
+    background: rgba(158, 42, 32, 0.08);
+}
+
 /* ---------- Confirmation popup ---------- */
 
 .modal.confirm {
