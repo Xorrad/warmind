@@ -16,6 +16,7 @@ import { createGameController } from './game.js';
 import { createBattleDialog } from './ui/battle.js';
 import { createDispatchDialog } from './ui/dispatch.js';
 import { h } from './ui/dom.js';
+import { createNotices } from './ui/notices.js';
 import { currentUser } from './user.js';
 import { logout, ackNews } from './api.js';
 import { renderVersion, renderPoints, setupPointsPopover } from './ui/topbar.js';
@@ -44,6 +45,8 @@ function syncMap() {
     return before !== null && before.provinces.some((p, i) => p.owner !== map.provinces[i].owner);
 }
 
+const notify = createNotices(document.getElementById('notices'));
+
 const view = createMapView(document.getElementById('map'), {
     onSelect: (province) => game.selectProvince(province),
     onUnitClick: (unitId, event) => game.selectUnit(unitId, event),
@@ -55,7 +58,7 @@ const game = createGameController({
     info: document.getElementById('province-info'),
     // The orders of the selected unit, shown in the province card
     actionBar: h('div', { class: 'unit-actions', role: 'group', 'aria-label': 'Unit orders' }),
-    toast: document.getElementById('toast'),
+    notify,
     battle: createBattleDialog(document.getElementById('battle-dialog')),
 });
 
@@ -100,14 +103,31 @@ const taskDialog = createTaskDialog(document.getElementById('task-dialog'), (fie
     setTasks((tasks) =>
         id ? tasks.map((t) => (t.id === id ? updateTask(t, fields) : t)) : [...tasks, createTask(fields, { id: newId(), now })],
     );
+    notify(fields.title.trim(), 'info', id ? 'Task updated' : fields.recurring ? 'New daily task' : 'New task');
 });
+
+/** Points a task brings if completed now (as shown on its badge). */
+function gainOf(id) {
+    if (!map) return 0;
+    const now = clockNow();
+    return completionGains(store.get().tasks, { provincesOwned: provincesOwned(), now }).get(id) ?? 0;
+}
 
 const askConfirm = createConfirmDialog(document.getElementById('confirm-dialog'));
 // Every popup closes when clicking outside it (like Escape)
 for (const dialog of document.querySelectorAll('dialog.modal')) closeOnBackdrop(dialog);
 
 const taskCallbacks = {
-    onToggle: (id) => setTasks((tasks) => tasks.map((t) => (t.id === id ? toggleDone(t, clockNow()) : t))),
+    onToggle: (id) => {
+        const before = store.get().tasks.find((t) => t.id === id);
+        if (!before) return;
+        const now = clockNow();
+        const wasDone = before.recurring ? isDoneToday(before, now) : before.completedAt !== null;
+        const gain = wasDone ? 0 : gainOf(id);
+        setTasks((tasks) => tasks.map((t) => (t.id === id ? toggleDone(t, now) : t)));
+        if (wasDone) notify(before.title, 'info', 'Marked as not done');
+        else notify(`${before.title}${gain > 0 ? ` (+${gain} AP)` : ''}`, 'success', before.recurring ? 'Done for today' : 'Task done');
+    },
     onEdit: (id) => taskDialog.open(store.get().tasks.find((t) => t.id === id)),
     onDelete: (id) => {
         const task = store.get().tasks.find((t) => t.id === id);
@@ -118,7 +138,9 @@ const taskCallbacks = {
             confirm: 'Delete',
             danger: true,
         }).then((yes) => {
-            if (yes) setTasks((tasks) => tasks.filter((t) => t.id !== id));
+            if (!yes) return;
+            setTasks((tasks) => tasks.filter((t) => t.id !== id));
+            notify(task.title, 'info', 'Task deleted');
         });
     },
 };

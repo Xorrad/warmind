@@ -52,11 +52,11 @@ export function coordinates(map, p) {
  *   getMap: () => import('/engine/mapgen.js').GameMap|null,
  *   info: HTMLElement,
  *   actionBar: HTMLElement,
- *   toast: HTMLElement,
+ *   notify: ReturnType<typeof import('./ui/notices.js').createNotices>,
  *   battle: ReturnType<typeof import('./ui/battle.js').createBattleDialog>,
  * }} deps
  */
-export function createGameController({ view, store, getMap, info, actionBar, toast, battle }) {
+export function createGameController({ view, store, getMap, info, actionBar, notify, battle }) {
     /**
      * Selected unit ids (the first one is the "primary": its province is
      * shown in the info card), and what the highlights show: 'orders' (moves
@@ -79,13 +79,9 @@ export function createGameController({ view, store, getMap, info, actionBar, toa
 
     /* ---------- Messages ---------- */
 
-    let toastTimer = null;
+    /** A notice on the map (top left), titled "Orders" for the unit actions. */
     function say(message, kind = 'info') {
-        toast.textContent = message;
-        toast.className = `toast ${kind}`;
-        toast.hidden = false;
-        clearTimeout(toastTimer);
-        toastTimer = setTimeout(() => (toast.hidden = true), 3500);
+        notify(message, kind, kind === 'error' ? 'Order refused' : 'Orders');
     }
 
     /* ---------- Targets of the selection ---------- */

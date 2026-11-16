@@ -19,7 +19,7 @@ const KINDS = [
         corner: 12,
     },
     {
-        selector: '.panel, .task, .province-info, .points-popover, .toast, .modal, .battle-side, .auth-card, .points, .session-badge',
+        selector: '.panel, .task, .province-info, .points-popover, .notice, .modal, .battle-side, .auth-card, .points, .session-badge',
         amplitude: 3,
         step: 9,
         corner: 7,
