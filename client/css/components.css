@@ -626,7 +626,6 @@
 }
 
 .task.done .task-title {
-    text-decoration: line-through;
     color: var(--text-muted);
 }
 
@@ -1806,12 +1805,33 @@ input[type='radio'] {
     --sheet: #e0d2b2;
 }
 
-/* Done: struck through with a red pencil */
+/* Done: crossed out with a red pencil. The line is a background on the
+   (inline) title text, so it runs line after line on wrapped titles, and
+   is drawn in 1 s when the task is checked (.striking). */
+.task-title .strike {
+    background: linear-gradient(var(--stamp-red), var(--stamp-red)) no-repeat 0 58% / 0% 2px;
+}
+
+.task.done .task-title .strike {
+    background-size: 100% 2px;
+}
+
+.task.striking .task-title .strike {
+    transition: background-size 1s cubic-bezier(0.45, 0.05, 0.4, 1);
+}
+
 .task.done .task-title {
-    text-decoration: line-through;
-    text-decoration-color: var(--stamp-red);
-    text-decoration-thickness: 2px;
     color: var(--ink-muted);
+}
+
+.task.striking .task-title {
+    transition: color 1s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .task.striking .task-title .strike {
+        transition: none;
+    }
 }
 
 /* Checkboxes: an inked square, ticked in red */
