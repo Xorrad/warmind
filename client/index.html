@@ -228,6 +228,17 @@
             </div>
         </dialog>
 
+        <dialog class="modal confirm" id="confirm-dialog" aria-labelledby="confirm-dialog-title" aria-describedby="confirm-dialog-message">
+            <form method="dialog">
+                <h2 id="confirm-dialog-title" data-confirm-title>Are you sure?</h2>
+                <p id="confirm-dialog-message" data-confirm-message></p>
+                <div class="modal-actions">
+                    <button type="submit" value="cancel" class="secondary" data-confirm-cancel>Cancel</button>
+                    <button type="submit" value="confirm" class="primary danger" data-confirm-ok>Confirm</button>
+                </div>
+            </form>
+        </dialog>
+
         <script type="module" src="/js/main.js"></script>
     </body>
 </html>

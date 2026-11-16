@@ -1,5 +1,6 @@
 /**
- * @file Popups: add task, settings, action confirmations.
+ * @file Popups: add/edit task, confirmations, and what all popups share
+ * (closing on a click outside them).
  */
 
 import { TASKS } from '/engine/config.js';
@@ -113,4 +114,56 @@ export function createTaskDialog(dialog, onSave) {
             fields.title.focus();
         },
     };
+}
+
+/**
+ * Wire the confirmation popup (used instead of window.confirm()).
+ * @param {HTMLDialogElement} dialog
+ * @returns {(options: { title: string, message: string, confirm?: string, danger?: boolean }) => Promise<boolean>}
+ *   Opens the popup; resolves to true when confirmed, false when cancelled,
+ *   dismissed with Escape or by clicking outside.
+ */
+export function createConfirmDialog(dialog) {
+    const title = dialog.querySelector('[data-confirm-title]');
+    const message = dialog.querySelector('[data-confirm-message]');
+    const ok = dialog.querySelector('[data-confirm-ok]');
+    const cancel = dialog.querySelector('[data-confirm-cancel]');
+    let resolve = null;
+    dialog.addEventListener('close', () => {
+        resolve?.(dialog.returnValue === 'confirm');
+        resolve = null;
+    });
+    return ({ title: heading, message: text, confirm = 'Confirm', danger = false }) => {
+        // A popup still open answers "no" before the new question
+        if (dialog.open) dialog.close();
+        title.textContent = heading;
+        message.textContent = text;
+        ok.textContent = confirm;
+        ok.classList.toggle('danger', danger);
+        dialog.returnValue = '';
+        dialog.showModal();
+        // Cancel by default: a stray Enter must not delete anything
+        cancel.focus();
+        return new Promise((r) => (resolve = r));
+    };
+}
+
+/**
+ * Close a popup when the backdrop (anywhere outside it) is clicked. Both the
+ * press and the release must be outside, so selecting text in the popup and
+ * releasing outside does not close it.
+ * @param {HTMLDialogElement} dialog
+ */
+export function closeOnBackdrop(dialog) {
+    const outside = (e) => {
+        if (e.target !== dialog) return false;
+        const r = dialog.getBoundingClientRect();
+        return e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom;
+    };
+    let pressedOutside = false;
+    dialog.addEventListener('pointerdown', (e) => (pressedOutside = outside(e)));
+    dialog.addEventListener('click', (e) => {
+        if (pressedOutside && outside(e)) dialog.close();
+        pressedOutside = false;
+    });
 }

@@ -2113,6 +2113,32 @@ input[type='radio'] {
     font-size: 0.78rem;
 }
 
+/* ---------- Confirmation popup ---------- */
+
+.modal.confirm {
+    width: min(400px, calc(100vw - 32px));
+}
+
+.modal.confirm p {
+    margin: 12px 0 18px;
+    line-height: 1.5;
+}
+
+.panel-actions .icon-btn {
+    width: 26px;
+    padding: 0;
+}
+
+.panel-head {
+    gap: 6px;
+    padding-right: 4px;
+}
+
+.panel-head h2 {
+    padding: 7px 12px 5px;
+    letter-spacing: 0.06em;
+}
+
 /* ---------- Sheets on the wooden table ---------- */
 
 /* The top bar and the task side panel are large sheets of paper (old,

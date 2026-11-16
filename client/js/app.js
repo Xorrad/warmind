@@ -19,7 +19,7 @@ import { currentUser } from './user.js';
 import { logout, ackNews } from './api.js';
 import { renderVersion, renderPoints, setupPointsPopover } from './ui/topbar.js';
 import { renderTasks, setupPanelToggles } from './ui/tasks.js';
-import { createTaskDialog } from './ui/modals.js';
+import { createTaskDialog, createConfirmDialog, closeOnBackdrop } from './ui/modals.js';
 import { store, session, saveStatus, settledByServer, syncDay } from './store.js';
 import { now as clockNow, canSkip, skipDays, skippedDays } from './clock.js';
 import { createTask, updateTask, toggleDone, isDoneToday } from '/engine/tasks.js';
@@ -100,12 +100,24 @@ const taskDialog = createTaskDialog(document.getElementById('task-dialog'), (fie
     );
 });
 
+const askConfirm = createConfirmDialog(document.getElementById('confirm-dialog'));
+// Every popup closes when clicking outside it (like Escape)
+for (const dialog of document.querySelectorAll('dialog.modal')) closeOnBackdrop(dialog);
+
 const taskCallbacks = {
     onToggle: (id) => setTasks((tasks) => tasks.map((t) => (t.id === id ? toggleDone(t, clockNow()) : t))),
     onEdit: (id) => taskDialog.open(store.get().tasks.find((t) => t.id === id)),
     onDelete: (id) => {
         const task = store.get().tasks.find((t) => t.id === id);
-        if (task && confirm(`Delete "${task.title}"?`)) setTasks((tasks) => tasks.filter((t) => t.id !== id));
+        if (!task) return;
+        askConfirm({
+            title: 'Delete task',
+            message: `"${task.title}" will be deleted for good.`,
+            confirm: 'Delete',
+            danger: true,
+        }).then((yes) => {
+            if (yes) setTasks((tasks) => tasks.filter((t) => t.id !== id));
+        });
     },
 };
 
